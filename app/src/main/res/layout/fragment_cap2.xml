@@ -1,0 +1,445 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <TableLayout
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:gravity="center"
+        android:stretchColumns="0,1,2,3"
+        android:verticalSpacing="5dp"
+        tools:ignore="HardcodedText,SpUsage">
+
+        <TableRow tools:ignore="UselessParent">
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="time"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:id="@+id/cap2102"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:id="@+id/cap2103"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:id="@+id/cap2104"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+        </TableRow>
+
+    </TableLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="2dip"
+        android:background="#FFE1E1E1" />
+
+    <TableLayout
+        android:layout_width="match_parent"
+        android:layout_height="230dp"
+        android:gravity="center"
+        android:stretchColumns="0,1,2,3,4,5"
+        android:verticalSpacing="10dp"
+        tools:ignore="HardcodedText,SpUsage">
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="SoC\n1"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="SoC\n2"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="Capa-\ncity"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="Batt.\noC"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="Ah\nadded"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="Car"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:id="@+id/cap212"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:id="@+id/cap213"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:id="@+id/cap214"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:id="@+id/cap215"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:id="@+id/cap216"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="amps"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="mins"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="low load"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:id="@+id/cap232"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:id="@+id/cap233"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="SoC"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="Capa."
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text=""
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="mod."
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="cell"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="volts"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="added"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="Ah"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="highest"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:id="@+id/cap252"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:id="@+id/cap253"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:id="@+id/cap254"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:id="@+id/cap255"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:id="@+id/cap256"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="average"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:id="@+id/cap264"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:id="@+id/cap265"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:id="@+id/cap266"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="lowest"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:id="@+id/cap272"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:id="@+id/cap273"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:id="@+id/cap274"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:id="@+id/cap275"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+            <TextView
+                android:id="@+id/cap276"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFFFF"
+                android:textSize="16dp" />
+
+        </TableRow>
+
+    </TableLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="2dip"
+        android:background="#FFE1E1E1" />
+
+    <ListView
+        android:id="@+id/instructions2"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:focusable="false"
+        android:gravity="center"
+        android:textColor="#FFFFFFFF"
+        android:textSize="16dp"
+        tools:ignore="SpUsage" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="2dip"
+        android:background="#FFE1E1E1" />
+
+</LinearLayout>
