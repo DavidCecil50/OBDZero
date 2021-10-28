@@ -16,7 +16,7 @@ There is a user manual availiable for download at OBDzero.dk or by writing to OR
 I take no responsibility for any consequences of OBDZero's use.
 
 Acknowledgements and references:
-Much of the code for OBDZero comes from Blueterm by pymasde.es.
+Much of the original code for OBDZero comes from Blueterm by pymasde.es.
 The commands to the Bluetooth dongle were found in ELM327DSH.pdf from www.elmelectronics.com
 The interpretations of the CAN PIDs for speed, voltage and current etc. were found on http://myimiev.com/forum/ posted by jjlink, garygid, priusfan, plaes, dax, cristi, and kiev.
 Special thanks to Anders Fanøe and Allan Korup for their advice on electric car and CAN technology.
