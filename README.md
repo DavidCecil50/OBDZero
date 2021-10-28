@@ -1,5 +1,6 @@
 # OBDZero
 Assists the drivers of the iMiev, CZero, and iOn electric cars
+
 OBDZero reads, displays and stores data from the iMiev, CZero og iOn electric cars. This data such as speed and electricity use is available on the car’s CAN computer network via a Bluetooth dongle attached to the car’s OBD port. The data is presented in 9 different screens. The first screen logs messages between the app, the OBD dongle and the car.  Two screens are intended for use while driving.  One of these, the WATTS screens, shows the car’s average watts, speed and watt-hours per km.  The other screen, DRIVE, updates the distance to the next charging station, the difference between the remaining range and the distance to the station, and suggests a speed to the station. 
 
 OBDZero can also measure the 100% capacity of the cars battery.
