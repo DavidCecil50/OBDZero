@@ -33,12 +33,14 @@ public class InitialValuesActivity extends Activity {
         textValue3 = findViewById(R.id.value_load);
         textValue3.setText(MainActivity.i_Load.str());
 
+        rangeUnits = MainActivity.i_RangeUnits;
         btnRangeUnits = findViewById(R.id.range_units);
-        btnRangeUnits.setText(MainActivity.i_RangeUnits);
+        btnRangeUnits.setText(rangeUnits);
         btnRangeUnits.setOnClickListener(v -> toogleRangeMiles());
 
+        odoUnits = MainActivity.i_OdoUnits;
         btnOdoUnits = findViewById(R.id.odo_units);
-        btnOdoUnits.setText(MainActivity.i_OdoUnits);
+        btnOdoUnits.setText(odoUnits);
         btnOdoUnits.setOnClickListener(v -> toogleOdoMiles());
 
         Button btnUpdate = findViewById(R.id.update);

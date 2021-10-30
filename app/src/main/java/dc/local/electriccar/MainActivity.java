@@ -171,10 +171,8 @@ public class MainActivity extends AppCompatActivity {
     private boolean runCollector = false;
     private boolean iniComputing = false;
     private boolean runComputing = false;
-    private boolean isComputing = false;
     private boolean iniRecording = false;
     private boolean runRecording = false;
-    private boolean isRecording = false;
     private boolean leftTabs = true;
     private boolean cells88 = true;
     private boolean cellsData = false;
@@ -191,7 +189,6 @@ public class MainActivity extends AppCompatActivity {
     static int m_CapStep = 0;
     static int m_CapCount = 0;
     private int m_newPIDs = 0;
-    private int p_newPIDs = 0;
     private int m_CellsNo = 88;
 
     private static Date stepDateTime = new Date();
@@ -529,6 +526,12 @@ public class MainActivity extends AppCompatActivity {
         btnThree.setText("Cells");
         btnFour.setText("Watts");
         btnFive.setText("Drive");
+
+        btnOne.setBackgroundColor(BLACK);
+        btnTwo.setBackgroundColor(BLACK);
+        btnThree.setBackgroundColor(BLACK);
+        btnFour.setBackgroundColor(BLACK);
+        btnFive.setBackgroundColor(BLACK);
 
         lineOne = findViewById(R.id.line1);
         lineTwo = findViewById(R.id.line2);
@@ -1164,6 +1167,7 @@ public class MainActivity extends AppCompatActivity {
             listInfo.add("app:OBD data collection started");
             updateFrag(FRAG_INFO);
             runCollector = true;
+            btnTwo.setBackgroundColor(clrDarkGreen);
             for (PID aPID : listPIDs) {
                 aPID.isFound = false;
                 aPID.isNew = false;
@@ -1185,18 +1189,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void processData() {
         stepDateTime = new Date();
-        if (isComputing) {
-            isComputing = false;
-            btnFour.setBackgroundColor(clrDarkGreen);
-        } else {
-            btnFour.setBackgroundColor(BLACK);
-        }
-        if (isRecording) {
-            isRecording = false;
-            btnFive.setBackgroundColor(clrDarkGreen);
-        } else {
-            btnFive.setBackgroundColor(BLACK);
-        }
         calcOBDs();
         if (iniComputing) iniComputations();
         if (runComputing) doComputations();
@@ -1206,7 +1198,6 @@ public class MainActivity extends AppCompatActivity {
                 String state = Environment.getExternalStorageState();
                 if (Environment.MEDIA_MOUNTED.equals(state)) {
                     if (m_newPIDs > 0) {
-                        isRecording = true;
                         String storedDateTime = strDateTime(stepDateTime);
                         StorePIDs(storedDateTime);
                         StorePIDIntegers(storedDateTime);
@@ -1215,7 +1206,7 @@ public class MainActivity extends AppCompatActivity {
                             StoreCells(storedDateTime);
                             StoreCellTemperatures(storedDateTime);
                         }
-                        if (isComputing) StoreCalc(storedDateTime);
+                        if (runComputing) StoreCalc(storedDateTime);
                     }
                 }
             }
@@ -1237,11 +1228,11 @@ public class MainActivity extends AppCompatActivity {
 
     private void stopData() {
         if (runComputing || iniComputing) stopComputing();
-        runCollector = false;
         if (serviceSerial != null) serviceSerial.stopCollector();
         itemMenuStartStopData.setTitle(menu_start_data);
-        btnThree.setBackgroundColor(BLACK);
+        runCollector = false;
         btnTwo.setBackgroundColor(BLACK);
+        btnThree.setBackgroundColor(BLACK);
         listInfo.add("app:OBD data collection stopped");
         updateFrag(FRAG_INFO);
     }
@@ -1268,7 +1259,6 @@ public class MainActivity extends AppCompatActivity {
         itemMenuStartStopComputing.setTitle(menu_start_computing);
         iniComputing = false;
         runComputing = false;
-        isComputing = false;
         btnFour.setBackgroundColor(BLACK);
         listInfo.add("app:Calculations stopped");
         updateFrag(FRAG_INFO);
@@ -1297,10 +1287,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void stopRecording() {
         if (runRecording) exposeFiles();
+        itemMenuStartStopRecording.setTitle(menu_start_recording);
         iniRecording = false;
         runRecording = false;
-        isRecording = false;
-        itemMenuStartStopRecording.setTitle(menu_start_recording);
         btnFive.setBackgroundColor(BLACK);
         listInfo.add("app:Recording stopped");
         if (!runCollector) updateFrag(FRAG_INFO);
@@ -1550,13 +1539,12 @@ public class MainActivity extends AppCompatActivity {
             if (aPID.isFound) foundPIDs++;
             if (aPID.isNew) newPIDs++;
         }
-        m_newPIDs = newPIDs;
-        if (m_newPIDs == 0 && p_newPIDs == 0) {
+        if (newPIDs == 0 && m_newPIDs == 0) {
             b_Amps.dbl = 0;
             c_Amps.dbl = 0;
             c_AmpsCal.dbl = 0;
         }
-        p_newPIDs = m_newPIDs;
+        m_newPIDs = newPIDs;
 
         listInfo.add("app:PIDs detected since start: " + foundPIDs);
         listInfo.add("app:PIDs updated in this cycle: " + newPIDs);
@@ -2069,6 +2057,7 @@ public class MainActivity extends AppCompatActivity {
 
             iniComputing = false;
             runComputing = true;
+            btnFour.setBackgroundColor(clrDarkGreen);
             listInfo.add("app:Calculations started");
         }
     }
@@ -2132,7 +2121,6 @@ public class MainActivity extends AppCompatActivity {
             p_Time = time;
 
         }
-        isComputing = true;
     }
 
     private void computeAuxW() {
@@ -2986,7 +2974,6 @@ public class MainActivity extends AppCompatActivity {
                             }
                             listInfo.add("app:Connected to " + connectedDeviceName);
                             if (runCollector) {
-                                btnTwo.setBackgroundColor(clrDarkGreen);
                                 stepTime = 0;
                                 cycleTime = 0;
                                 attemptNo = 0;
@@ -3010,6 +2997,7 @@ public class MainActivity extends AppCompatActivity {
 
                         case BluetoothSerialService.STATE_FAILED:
                             runRestart = false;
+                            btnOne.setBackgroundColor(BLACK);
                             if (itemMenuConnect != null) itemMenuConnect.setTitle(menu_connect);
                             if (connectedDevice != null) {
                                 listInfo.add("app:Failed to connect to " + connectedDeviceName);
@@ -3107,10 +3095,7 @@ public class MainActivity extends AppCompatActivity {
                                 break;
                             default:
                                 listInfo.add("OBD:" + lineReceived);
-                                if (runCollector) {
-                                    btnTwo.setBackgroundColor(clrDarkGreen);
-                                    readLine(lineReceived);
-                                }
+                                if (runCollector) readLine(lineReceived);
                                 break;
 
                         }
@@ -3289,6 +3274,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                         iniRecording = false;
                         runRecording = true;
+                        btnFive.setBackgroundColor(clrDarkGreen);
                     } else {
                         listInfo.add("app:Recording failed for reasons unknown.");
                         if (!runCollector) updateFrag(FRAG_INFO);
