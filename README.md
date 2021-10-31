@@ -5,7 +5,7 @@ OBDZero reads, displays and stores data from the iMiev, CZero og iOn electric ca
 
 OBDZero can also measure the 100% capacity of the cars battery.
 
-The app saves data in semicolon separated text files, either in the phone’s internal RAM or on an SD Card depending on how the phone is set up.
+The app saves data in semicolon separated text files, either in the phone’s storage or on an SD Card depending on how the phone is set up.
 
 OBDZero was developed on an older phone running Android 4.3 with an INTEY OBDII an inexpensive OBD Bluetooth dongle. 
 
