@@ -82,8 +82,6 @@ class BluetoothSerialService {
             {"000", "400", "100", "400", "500", "400", "500", "400", "100", "400", "000"};
     private static int filterNo = 0;
 
-    //{"101", "200", "285", "300", "384", "412", "412", "564", "5A1", "695", "695", "695", "695", "75A"};
-
     /**
      * Constructor. Prepares a new BluetoothChat session.
      *

@@ -11,7 +11,7 @@ OBDZero was developed on an older phone running Android 4.3 with an INTEY OBDII 
 
 The app does not exchange data with the Internet and it does not use GPS.
 
-There is a user manual availiable for download at OBDzero.dk or by writing to ORPEnvironment@gmail.com
+There is a user manual available for download at OBDzero.dk or by writing to ORPEnvironment@gmail.com
 
 I take no responsibility for any consequences of OBDZero's use.
 

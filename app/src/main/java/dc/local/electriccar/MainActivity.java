@@ -197,7 +197,7 @@ public class MainActivity extends AppCompatActivity {
     private static double d_Second = 1.0;
     private static double d_Hour = 0.0056;
 
-    private static final double b_Vavg = 326;
+    private static final double b_Vavg = 320;
     private static final double s_Whkm = 120;
 
     static final OBD i_Spd100 = new OBD(95, "km/h", 0);
@@ -208,7 +208,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final OBD c_Mass = new OBD(1120 + i_Load.dbl, "kg", 0);
     private static final OBD c_Roll = new OBD(9.89 * 0.018 * c_Mass.dbl, "", 2);
-    private static final OBD c_Drag = new OBD(0.8 * (1.2978 - 0.0046 * 15) / 2, "", 2);
+    private static final OBD c_Drag = new OBD(0.8 * (1.2978 - 0.0046 * 15) / 2.0, "", 2);
 
 
     static final OBD c_SpdAvg = new OBD(20, "km/h", 1);
@@ -262,7 +262,6 @@ public class MainActivity extends AppCompatActivity {
     private static final OBD c_ChargeTemp1 = new OBD(0, "oC", 0);
     private static final OBD c_ChargeTemp2 = new OBD(0, "oC", 0);
     private static final OBD c_ChargeAAC = new OBD(0, "A", 2);
-    private static final OBD c_AccWavg = new OBD(0, "W", 1);
     private static final OBD c_KeyOn = new OBD(0, "", 0);
     private static final OBD c_AirSensor = new OBD(20, "oC", 0);
     private static final OBD c_MotorTemp0 = new OBD(20, "oC", 0);
@@ -272,7 +271,7 @@ public class MainActivity extends AppCompatActivity {
 
     static final OBD c_Margin = new OBD(c_RR.dbl, "km", 0);
 
-    static final OBD b_Watts = new OBD(500, "W", 0);
+    static final OBD b_Watts = new OBD(0, "W", 0);
     static final OBD b_WhkmAux = new OBD(s_Whkm, "Wh", 0);
     static final OBD b_WMovAvg = new OBD(1000, "W", 0);
 
@@ -319,6 +318,8 @@ public class MainActivity extends AppCompatActivity {
     private static final OBD m_BatAh2max = new OBD(0, "Ah", 2);
     private static final OBD m_BatAh2min = new OBD(0, "Ah", 2);
     private static final OBD m_BatAh2avg = new OBD(0, "Ah", 2);
+    private static final OBD m_AccW = new OBD(0, "W", 1);
+    private static final OBD m_AccWavg = new OBD(0, "W", 1);
     private static final OBD m_AmpsCal = new OBD(c_AmpsCal.dbl, "A", 2);
     private static final OBD m_AmpsAvg = new OBD(c_AmpsCal.dbl, "A", 2);
     private static final OBD m_Odo = new OBD(c_Odo.dbl, "km", 1);
@@ -1421,11 +1422,11 @@ public class MainActivity extends AppCompatActivity {
                         c_Speed4.dbl = (aPID.intPID[6] * 256 + aPID.intPID[7] - 49152) / 19.0;
                     break;
                 case "210":
-                    c_Pedal.dbl = 100.0 * aPID.intPID[2] / 256.0;
+                    c_Pedal.dbl = 100 * aPID.intPID[2] / 256.0;
                     break;
                 case "215":
                     if (aPID.intPID[0] < 255)
-                        c_Speed0.dbl = (256.0 * aPID.intPID[0] + aPID.intPID[1]) / 128.0;
+                        c_Speed0.dbl = (256 * aPID.intPID[0] + aPID.intPID[1]) / 128.0;
                     break;
                 case "231":
                     c_BrakeOn.dbl = aPID.intPID[4];
@@ -1455,11 +1456,11 @@ public class MainActivity extends AppCompatActivity {
                 case "373":
                     b_BatVmax.dbl = (aPID.intPID[0] + 210) / 100.0;
                     b_BatVmin.dbl = (aPID.intPID[1] + 210) / 100.0;
-                    b_Amps.dbl = (aPID.intPID[2] * 256.0 + aPID.intPID[3] - 32768.0) / 100.0;
+                    b_Amps.dbl = (aPID.intPID[2] * 256 + aPID.intPID[3] - 32768) / 100.0;
                     c_Amps.dbl = -b_Amps.dbl;
                     c_AmpsCal.dbl = -(b_Amps.dbl + 0.66);
                     if (aPID.intPID[4] > 9)
-                        b_Volts.dbl = (aPID.intPID[4] * 256.0 + aPID.intPID[5]) / 10.0;
+                        b_Volts.dbl = (aPID.intPID[4] * 256 + aPID.intPID[5]) / 10.0;
                     b_Watts.dbl = c_AmpsCal.dbl * b_Volts.dbl;
                     break;
                 case "374":
@@ -1467,7 +1468,7 @@ public class MainActivity extends AppCompatActivity {
                     c_SoC2.dbl = (aPID.intPID[1] - 10.0) / 2.0;
                     b_BatTmax.dbl = (aPID.intPID[4] - 50.0);
                     b_BatTmin.dbl = (aPID.intPID[5] - 50.0);
-                    c_CapAh.dbl = aPID.intPID[6] / 2.0;
+                    if (aPID.intPID[6] > 0) c_CapAh.dbl = aPID.intPID[6] / 2.0;
                     break;
                 case "384":
                     if (aPID.intPID[0] < 255) {
@@ -1482,7 +1483,7 @@ public class MainActivity extends AppCompatActivity {
                     h_Watts.dbl = h_Amps.dbl * b_Volts.dbl;
                     break;
                 case "389":
-                    c_ChargeVDC.dbl = 2.0 * (aPID.intPID[0] + 0.5);
+                    c_ChargeVDC.dbl = 2 * (aPID.intPID[0] + 0.5);
                     c_ChargeVAC.dbl = aPID.intPID[1];
                     c_ChargeADC.dbl = aPID.intPID[2] / 10.0;
                     c_ChargeTemp1.dbl = aPID.intPID[3] - 50.0;
@@ -1810,8 +1811,8 @@ public class MainActivity extends AppCompatActivity {
     private void calcCellNumber() {
         if (b_Volts.dbl > 0 && b_BatVmax.dbl > 0 && b_BatVmin.dbl > 0) {
             double cells = b_Volts.dbl / ((b_BatVmax.dbl + b_BatVmin.dbl) / 2.0);
-            if (cells > 79.0 && cells < 89.0)
-                if (cells < 84.0) {
+            if (cells > 79 && cells < 89)
+                if (cells < 84) {
                     m_CellsNo = 80;
                     for (Cell aCell : listCells) {
                         if (aCell.module == 6 || aCell.module == 12) {
@@ -1954,7 +1955,7 @@ public class MainActivity extends AppCompatActivity {
         double bP = 4.28440915656331;
         double aN = 0.0832;
         double bN = 0.385;
-        double xC = SoC / 100;
+        double xC = SoC / 100.0;
         double xP = b - a * xC;
         double xN = c * xC + d;
         double vModel = bP - aP * xP - aN * Math.pow(xN, -bN) + e * (temperature - 25);
@@ -2012,7 +2013,7 @@ public class MainActivity extends AppCompatActivity {
             c_AhRem.dbl = c_SoC2.dbl * c_CapAh.dbl / 100.0;
             b_AhRem.dbl = c_AhRem.dbl;
             m_AhRem.dbl = c_AhRem.dbl;
-            c_WhRem.dbl = c_AhRem.dbl * (b_Volts.dbl + 320) / 2;
+            c_WhRem.dbl = c_AhRem.dbl * (b_Volts.dbl + 320) / 2.0;
             b_WhRem.dbl = c_WhRem.dbl;
             m_WhRem.dbl = c_WhRem.dbl;
             t_WhReq.dbl = c_WhRem.dbl;
@@ -2046,12 +2047,12 @@ public class MainActivity extends AppCompatActivity {
             c_Mass.dbl = 1120 + i_Load.dbl;
             c_Roll.dbl = 9.89 * 0.017 * c_Mass.dbl;
 
-            c_AccWavg.dbl = 100;
+            m_AccWavg.dbl = 0;
 
             m_OCtimer.dbl = 0;
 
             m_CapStep = 0;
-            m_CapSoCUsed.dbl = 100.0 - c_SoC2.dbl;
+            m_CapSoCUsed.dbl = 100- c_SoC2.dbl;
             if (m_CapSoCUsed.dbl < 0 || m_CapSoCUsed.dbl > 100) m_CapSoCUsed.dbl = 0;
             m_CapAhUsed.dbl = c_CapAh.dbl * (m_CapSoCUsed.dbl) / 100.0;
 
@@ -2064,7 +2065,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void doComputations() {
         double wnd_Spd = 90;
-        double accW;
 
         long time = currentTimeMillis();
         d_Second = (time - p_Time) / 1000.0; //time since the last computation in seconds
@@ -2074,12 +2074,12 @@ public class MainActivity extends AppCompatActivity {
 
             computeAuxW();
 
-            accW = computeAccW();
+            m_AccW.dbl = computeAccW();
 
-            computeRegW(accW);
+            computeRegW(m_AccW.dbl);
 
             if (c_Speed0.dbl > 0) {
-                m_W.dbl = computeModel(c_Speed0.dbl, accW);
+                m_W.dbl = computeModel(c_Speed0.dbl, m_AccW.dbl);
                 if (d_Second < 9)
                     e_N.dbl += d_Hour * (b_Watts.dbl - m_W.dbl); // The difference between the effect reported by the car and the effect computed by the model
                 if (e_N.dbl > 300) e_N.dbl = 300;
@@ -2091,7 +2091,7 @@ public class MainActivity extends AppCompatActivity {
             }
             e_W.dbl = e_N.dbl * c_SpdAvg.dbl / 3.6;
 
-            computeWhkm(accW);
+            computeWhkm(m_AccW.dbl);
 
             computeWindSpeed(wnd_Spd);
 
@@ -2147,9 +2147,9 @@ public class MainActivity extends AppCompatActivity {
         double p_v = p_Speed.dbl / 3.6; //Convert to m/s.
         double watts;
         if (d_Second > 1) {
-            watts = (m_v + p_v) / 2 * c_Mass.dbl * (m_v - p_v) / d_Second;
+            watts = (m_v + p_v) / 2.0 * c_Mass.dbl * (m_v - p_v) / d_Second;
         } else {
-            watts = (m_v + p_v) / 2 * c_Mass.dbl * (m_v - p_v);
+            watts = (m_v + p_v) / 2.0 * c_Mass.dbl * (m_v - p_v);
         }
         return watts;
     }
@@ -2165,7 +2165,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private double computeModel(double speed, double accW) {
-        c_Drag.dbl = 0.75 * (1.2978 - 0.0046 * c_AirSensor.dbl) / 2;
+        c_Drag.dbl = 0.75 * (1.2978 - 0.0046 * c_AirSensor.dbl) / 2.0;
         double m_v = speed / 3.6; //Convert to m/s.
         return m_AuxW.dbl + (c_Roll.dbl + e_N.dbl) * m_v + c_Drag.dbl * m_v * m_v * m_v + accW;
     }
@@ -2177,7 +2177,7 @@ public class MainActivity extends AppCompatActivity {
             c_SpdAvg.dbl = aKeep * c_SpdAvg.dbl + aAdd * c_Speed0.dbl;
             if (c_SpdAvg.dbl < 1) c_SpdAvg.dbl = 1;
             c_SpdTrueAvg.dbl = c_SpdCor.dbl * c_SpdAvg.dbl;
-            c_AccWavg.dbl = aKeep * c_AccWavg.dbl + aAdd * accW; //compute the average watts (returned) used to (de)accelerate.
+            m_AccWavg.dbl = aKeep * m_AccWavg.dbl + aAdd * accW; //compute the average watts (returned) used to (de)accelerate.
             b_Wavg.dbl = aKeep * b_Wavg.dbl + aAdd * b_Watts.dbl; //compute the average measured watts while in drive.
             m_Wavg.dbl = aKeep * m_Wavg.dbl + aAdd * m_W.dbl; //compute the average model watts while in drive.
             b_WMovAvg.dbl = aKeep * b_WMovAvg.dbl + aAdd * (b_Watts.dbl - m_AuxW.dbl); //compute the average model watts while in drive.
@@ -2213,22 +2213,22 @@ public class MainActivity extends AppCompatActivity {
         }
         p_AmpsCal.dbl = c_AmpsCal.dbl;
         mp_AmpsCal.dbl = m_AmpsCal.dbl;
-        if (c_SoC2.dbl > 0) b_CapAhCheck.dbl = 100.0 * b_AhRem.dbl / c_SoC2.dbl;
+        if (c_SoC2.dbl > 0) b_CapAhCheck.dbl = 100 * b_AhRem.dbl / c_SoC2.dbl;
     }
 
     private void computeWh() {
         double b_V0 = 0.117 * b_Temp.dbl - 0.177 * c_AmpsCal.dbl + 320.1;
-        double c_VRem = (b_Volts.dbl + b_V0) / 2;
+        double c_VRem = (b_Volts.dbl + b_V0) / 2.0;
         c_WhRem.dbl = c_VRem * c_AhRem.dbl;
         b_WhRem.dbl = c_VRem * b_AhRem.dbl;
         m_WhRem.dbl = c_VRem * m_AhRem.dbl;
         double b_V100 = 0.117 * b_Temp.dbl - 0.177 * c_AmpsCal.dbl + 356.8;
-        c_CapWh.dbl = c_CapAh.dbl * (b_V100 + b_V0) / 2;
+        c_CapWh.dbl = c_CapAh.dbl * (b_V100 + b_V0) / 2.0;
     }
 
     private void computeDistances() {
         if (d_Second < 120) { // If there is less than 2 minutes since the last step then assume no data has been lost.
-            double dx = (c_Speed0.dbl + p_Speed.dbl) * d_Hour / 2;
+            double dx = (c_Speed0.dbl + p_Speed.dbl) * d_Hour / 2.0;
             m_Odo.dbl += dx;
             t_km.dbl -= c_SpdCor.dbl * dx; //True distance to the next charging station is reduced by the distance traveled during hours
             m_km.dbl += c_SpdCor.dbl * dx; //test distance since charging, adjusted by the error in the car speed
@@ -2318,7 +2318,7 @@ public class MainActivity extends AppCompatActivity {
     private void updateCapacity() {
         m_Cap1Ahavg.dbl = 0;
         m_Cap1AhavgDisplay.dbl = 0;
-        if (c_SoC2.dbl > 0 && c_SoC2.dbl < 100) m_CapSoCUsed.dbl = 100.0 - c_SoC2.dbl;
+        if (c_SoC2.dbl > 0 && c_SoC2.dbl < 100) m_CapSoCUsed.dbl = 100 - c_SoC2.dbl;
         else m_CapSoCUsed.dbl = 0;
         m_CapAhUsed.dbl = c_CapAh.dbl * m_CapSoCUsed.dbl / 100.0;
 
@@ -2360,23 +2360,23 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void computeCapacities1() {
-        m_CapSoCUsed.dbl = 100.0 - c_SoC2.dbl;
+        m_CapSoCUsed.dbl = 100 - c_SoC2.dbl;
         if (m_CapSoCUsed.dbl < 0 || m_CapSoCUsed.dbl > 100) m_CapSoCUsed.dbl = 0;
         m_CapAhUsed.dbl = c_CapAh.dbl * (m_CapSoCUsed.dbl) / 100.0;
         m_CapTemp.dbl = 0.99 * m_CapTemp.dbl + 0.01 * m_CellAhmin.temperature;
         if (100 - b_BatSoCmax.dbl > 0)
-            m_BatAh1max.dbl = 100.0 * m_CapAhUsed.dbl / (100 - b_BatSoCmax.dbl);
+            m_BatAh1max.dbl = 100 * m_CapAhUsed.dbl / (100- b_BatSoCmax.dbl);
         if (100 - b_BatSoCavg.dbl > 0)
-            m_BatAh1avg.dbl = 100.0 * m_CapAhUsed.dbl / (100 - b_BatSoCavg.dbl);
+            m_BatAh1avg.dbl = 100 * m_CapAhUsed.dbl / (100 - b_BatSoCavg.dbl);
         if (100 - b_BatSoCmin.dbl > 0)
-            m_BatAh1min.dbl = 100.0 * m_CapAhUsed.dbl / (100 - b_BatSoCmin.dbl);
+            m_BatAh1min.dbl = 100 * m_CapAhUsed.dbl / (100 - b_BatSoCmin.dbl);
         if (cellsData) {
             if (100 - m_CellAhmax.SoC > 0)
-                m_CellAhmax.capAh1 = 100.0 * m_CapAhUsed.dbl / (100 - m_CellAhmax.SoC);
+                m_CellAhmax.capAh1 = 100 * m_CapAhUsed.dbl / (100- m_CellAhmax.SoC);
             if (100 - m_SoCavg.dbl > 0)
-                m_Cap1AhavgDisplay.dbl = 100.0 * m_CapAhUsed.dbl / (100 - m_SoCavg.dbl);
+                m_Cap1AhavgDisplay.dbl = 100 * m_CapAhUsed.dbl / (100 - m_SoCavg.dbl);
             if (100 - m_CellAhmin.SoC > 0)
-                m_CellAhmin.capAh1 = 100.0 * m_CapAhUsed.dbl / (100 - m_CellAhmin.SoC);
+                m_CellAhmin.capAh1 = 100 * m_CapAhUsed.dbl / (100 - m_CellAhmin.SoC);
         } else {
             m_Cap1AhavgDisplay.dbl = m_BatAh1avg.dbl;
         }
@@ -2385,16 +2385,12 @@ public class MainActivity extends AppCompatActivity {
     private void storeCapacities1() {
         if (cellsData) {
             for (Cell aCell : listCells) {
-                if (100 - aCell.SoC > 0) aCell.capAh1 = 100.0 * m_CapAhUsed.dbl / (100 - aCell.SoC);
+                if (100 - aCell.SoC > 0) aCell.capAh1 = 100 * m_CapAhUsed.dbl / (100 - aCell.SoC);
             }
             m_Cap1Ahmax.dbl = m_CellAhmax.capAh1;
             if (100 - m_SoCavg.dbl > 0)
-                m_Cap1Ahavg.dbl = 100.0 * m_CapAhUsed.dbl / (100 - m_SoCavg.dbl);
+                m_Cap1Ahavg.dbl = 100 * m_CapAhUsed.dbl / (100 - m_SoCavg.dbl);
             m_Cap1Ahmin.dbl = m_CellAhmin.capAh1;
-        } else {
-            m_Cap1Ahmax.dbl = m_BatAh1max.dbl;
-            m_Cap1Ahavg.dbl = m_BatAh1avg.dbl;
-            m_Cap1Ahmin.dbl = m_BatAh1min.dbl;
         }
     }
 
@@ -2439,11 +2435,11 @@ public class MainActivity extends AppCompatActivity {
 
     private void computeCapacities2() {
         if (m_BatSummax.dbl > 0 && m_CapAhsum.dbl > 0)
-            m_BatAh2max.dbl = 100.0 * m_CapAhUsed.dbl / (m_BatSummax.dbl);
+            m_BatAh2max.dbl = 100 * m_CapAhUsed.dbl / (m_BatSummax.dbl);
         if (m_BatSumavg.dbl > 0 && m_CapAhsum.dbl > 0)
-            m_BatAh2avg.dbl = 100.0 * m_CapAhUsed.dbl / (m_BatSumavg.dbl);
+            m_BatAh2avg.dbl = 100 * m_CapAhUsed.dbl / (m_BatSumavg.dbl);
         if (m_BatSummin.dbl > 0 && m_CapAhsum.dbl > 0)
-            m_BatAh2min.dbl = 100.0 * m_CapAhUsed.dbl / (m_BatSummin.dbl);
+            m_BatAh2min.dbl = 100 * m_CapAhUsed.dbl / (m_BatSummin.dbl);
         if (cellsData) {
             if (m_CellAhmax.SoCsum > 0 && m_CapAhsum.dbl > 0)
                 m_CellAhmax.capAh2 = 100 * m_CapAhsum.dbl / m_CellAhmax.SoCsum;
@@ -2471,10 +2467,7 @@ public class MainActivity extends AppCompatActivity {
             m_Cap2Ahmax.dbl = m_CellAhmax.capAh2;
             m_Cap2Ahmin.dbl = m_CellAhmin.capAh2;
         } else {
-            m_Cap2Ahavg.dbl = m_BatAh2avg.dbl;
             m_Cap2AhavgDisplay.dbl = m_BatAh2avg.dbl;
-            m_Cap2Ahmax.dbl = m_BatAh2max.dbl;
-            m_Cap2Ahmin.dbl = m_BatAh2min.dbl;
         }
     }
 
@@ -2715,11 +2708,12 @@ public class MainActivity extends AppCompatActivity {
         arrayOBD.add("Motor temps.  " + c_MotorTemp0.strUnit() + " " + c_MotorTemp1.strUnit() + " " + c_MotorTemp2.strUnit() + " " + c_MotorTemp3.strUnit());
         arrayOBD.add("Regeneration  " + c_RegA.strUnit() + " " + c_RegW.strUnit());
         arrayOBD.add("Battery");
-        arrayOBD.add("  Capacity    " + c_CapAh.strUnit() + " @ 100% SoC");
         arrayOBD.add("  Voltage     " + b_Volts.strUnit());
         arrayOBD.add("  Current out " + c_Amps.strUnit() + " calib. " + c_AmpsCal.strUnit());
         arrayOBD.add("  Watts   out " + b_Watts.strUnit() + " calibrated");
         arrayOBD.add("  SoC         (1) " + c_SoC1.strUnit() + " (2) " + c_SoC2.strUnit());
+        arrayOBD.add("  Capacity    " + c_CapAh.strUnit() + " @ 100% SoC");
+        arrayOBD.add("  SoH         " + decFix0.format(100 * c_CapAh.dbl / 50.0) + " %");
 
         arrayOBD.add("Cells");
         if (cellsData) {
@@ -3692,7 +3686,8 @@ public class MainActivity extends AppCompatActivity {
         strArray.add(datetime + ";C Drag;" + c_Drag.str() + "\r\n");
         strArray.add(datetime + ";B A;" + c_AmpsCal.str() + "\r\n");
         strArray.add(datetime + ";C RegW;" + c_RegW.str() + "\r\n");
-        strArray.add(datetime + ";M AccAvg;" + c_AccWavg.str() + "\r\n");
+        strArray.add(datetime + ";M Acc;" + m_AccW.str() + "\r\n");
+        strArray.add(datetime + ";M AccAvg;" + m_AccWavg.str() + "\r\n");
         strArray.add(datetime + ";M SoC;" + m_SoCavg.str() + "\r\n");
         strArray.add(datetime + ";M SoCavg;" + m_SoCavg.str() + "\r\n");
         strArray.add(datetime + ";M LowAmins;" + m_OCtimer.str() + "\r\n");

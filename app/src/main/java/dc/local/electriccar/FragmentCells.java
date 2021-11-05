@@ -95,9 +95,9 @@ public class FragmentCells extends Fragment {
                 } else {
                     for (int j = 0; j < 8; j++) {
                         numbers[index] = cells[i * 8 + j].strVoltage(2);
-                        if (Vhigh - Vlow > 0.015) {
-                            high[index] = cells[i * 8 + j].capAh1 >= Vhigh;
-                            low[index] = cells[i * 8 + j].capAh1 <= Vlow;
+                        if (Vhigh - Vlow > 0.02) {
+                            high[index] = cells[i * 8 + j].volts >= Vhigh;
+                            low[index] = cells[i * 8 + j].volts <= Vlow;
                         } else {
                             high[index] = false;
                             low[index] = false;
