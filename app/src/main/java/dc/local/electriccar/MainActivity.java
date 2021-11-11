@@ -2052,7 +2052,7 @@ public class MainActivity extends AppCompatActivity {
             m_OCtimer.dbl = 0;
 
             m_CapStep = 0;
-            m_CapSoCUsed.dbl = 100- c_SoC2.dbl;
+            m_CapSoCUsed.dbl = 100 - c_SoC2.dbl;
             if (m_CapSoCUsed.dbl < 0 || m_CapSoCUsed.dbl > 100) m_CapSoCUsed.dbl = 0;
             m_CapAhUsed.dbl = c_CapAh.dbl * (m_CapSoCUsed.dbl) / 100.0;
 
@@ -2064,7 +2064,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void doComputations() {
-        double wnd_Spd = 90;
 
         long time = currentTimeMillis();
         d_Second = (time - p_Time) / 1000.0; //time since the last computation in seconds
@@ -2074,9 +2073,9 @@ public class MainActivity extends AppCompatActivity {
 
             computeAuxW();
 
-            m_AccW.dbl = computeAccW();
+            computeAccW();
 
-            computeRegW(m_AccW.dbl);
+            computeRegW();
 
             if (c_Speed0.dbl > 0) {
                 m_W.dbl = computeModel(c_Speed0.dbl, m_AccW.dbl);
@@ -2091,9 +2090,9 @@ public class MainActivity extends AppCompatActivity {
             }
             e_W.dbl = e_N.dbl * c_SpdAvg.dbl / 3.6;
 
-            computeWhkm(m_AccW.dbl);
+            computeWhkm();
 
-            computeWindSpeed(wnd_Spd);
+            computeWindSpeed();
 
             computeAh();
 
@@ -2142,23 +2141,18 @@ public class MainActivity extends AppCompatActivity {
         m_AuxW.dbl = auxW;
     }
 
-    private double computeAccW() {
+    private void computeAccW() {
         double m_v = c_Speed0.dbl / 3.6; //Convert to m/s.
         double p_v = p_Speed.dbl / 3.6; //Convert to m/s.
-        double watts;
-        if (d_Second > 1) {
-            watts = (m_v + p_v) / 2.0 * c_Mass.dbl * (m_v - p_v) / d_Second;
-        } else {
-            watts = (m_v + p_v) / 2.0 * c_Mass.dbl * (m_v - p_v);
-        }
-        return watts;
+        if (d_Second > 0) m_AccW.dbl = (m_v + p_v) / 2.0 * c_Mass.dbl * (m_v - p_v) / d_Second;
+        if (m_AccW.dbl > 100000) m_AccW.dbl = 100000;
     }
 
-    private void computeRegW(double accW) {
+    private void computeRegW() {
         if (c_RegA.dbl < 0) {
             c_RegW.dbl = c_RegA.dbl * b_Volts.dbl;
-        } else if (accW < 0) {
-            c_RegW.dbl = 0.6 * accW;
+        } else if (m_AccW.dbl < 0) {
+            c_RegW.dbl = 0.6 * m_AccW.dbl;
         } else {
             c_RegW.dbl = 0;
         }
@@ -2170,14 +2164,14 @@ public class MainActivity extends AppCompatActivity {
         return m_AuxW.dbl + (c_Roll.dbl + e_N.dbl) * m_v + c_Drag.dbl * m_v * m_v * m_v + accW;
     }
 
-    private void computeWhkm(double accW) {
+    private void computeWhkm() {
         if (c_Gear.in() == 4 && d_Second < 10) {
             double aAdd = 40 * d_Hour;
             double aKeep = 1 - aAdd;
             c_SpdAvg.dbl = aKeep * c_SpdAvg.dbl + aAdd * c_Speed0.dbl;
             if (c_SpdAvg.dbl < 1) c_SpdAvg.dbl = 1;
             c_SpdTrueAvg.dbl = c_SpdCor.dbl * c_SpdAvg.dbl;
-            m_AccWavg.dbl = aKeep * m_AccWavg.dbl + aAdd * accW; //compute the average watts (returned) used to (de)accelerate.
+            m_AccWavg.dbl = aKeep * m_AccWavg.dbl + aAdd * m_AccW.dbl; //compute the average watts (returned) used to (de)accelerate.
             b_Wavg.dbl = aKeep * b_Wavg.dbl + aAdd * b_Watts.dbl; //compute the average measured watts while in drive.
             m_Wavg.dbl = aKeep * m_Wavg.dbl + aAdd * m_W.dbl; //compute the average model watts while in drive.
             b_WMovAvg.dbl = aKeep * b_WMovAvg.dbl + aAdd * (b_Watts.dbl - m_AuxW.dbl); //compute the average model watts while in drive.
@@ -2191,8 +2185,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void computeWindSpeed(double speed) {
-        double m_v = speed / 3.6; //Convert to m/s.
+    private void computeWindSpeed() {
+        double m_v = 90 / 3.6; //Convert to m/s.
         if (e_N.dbl > -c_Drag.dbl * m_v * m_v) {
             m_Wind.dbl = Math.sqrt(m_v * m_v + e_N.dbl / c_Drag.dbl) - m_v;
         } else {
@@ -2240,8 +2234,8 @@ public class MainActivity extends AppCompatActivity {
                 checkOdoUnits = test > 0.58 && test < 0.68;
             }
         } else {
-            m_km.dbl += 0.95 * (c_Odo.dbl - m_Odo.dbl);
-            t_km.dbl -= 0.95 * (c_Odo.dbl - m_Odo.dbl);
+            m_km.dbl += c_SpdCor.dbl * (c_Odo.dbl - m_Odo.dbl);
+            t_km.dbl -= c_SpdCor.dbl * (c_Odo.dbl - m_Odo.dbl);
             m_Odo.dbl = c_Odo.dbl;
         }
         if (t_km.dbl < 0) t_km.dbl = 0;
@@ -2259,7 +2253,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void computeRR() {
         if (c_Gear.in() == 4 && d_Second < 10) {
-            double aAdd = 4 * d_Hour;
+            double aAdd = 2 * d_Hour;
             double aKeep = 1 - aAdd;
             b_WavgRR.dbl = aKeep * b_WavgRR.dbl + aAdd * (b_Watts.dbl - m_AuxW.dbl); //compute the average measured watts while in drive.
             m_WavgRR.dbl = aKeep * m_WavgRR.dbl + aAdd * (m_W.dbl - m_AuxW.dbl); //compute the average model watts while in drive.
@@ -2298,10 +2292,10 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         if (c_WhRem.dbl > t_WhReq.dbl) {
-            t_Speed.dbl += 0.3;
+            if (d_Second < 10) t_Speed.dbl += 0.3 * d_Second; else t_Speed.dbl += 3;
             if (t_Speed.dbl > 110.4) t_Speed.dbl = 110.4;
         } else {
-            t_Speed.dbl -= 0.3;
+            if (d_Second < 10) t_Speed.dbl -= 0.3 * d_Second; else t_Speed.dbl -= 3;
             if (t_Speed.dbl < 49.6) t_Speed.dbl = 49.6;
         }
     }
@@ -2365,14 +2359,14 @@ public class MainActivity extends AppCompatActivity {
         m_CapAhUsed.dbl = c_CapAh.dbl * (m_CapSoCUsed.dbl) / 100.0;
         m_CapTemp.dbl = 0.99 * m_CapTemp.dbl + 0.01 * m_CellAhmin.temperature;
         if (100 - b_BatSoCmax.dbl > 0)
-            m_BatAh1max.dbl = 100 * m_CapAhUsed.dbl / (100- b_BatSoCmax.dbl);
+            m_BatAh1max.dbl = 100 * m_CapAhUsed.dbl / (100 - b_BatSoCmax.dbl);
         if (100 - b_BatSoCavg.dbl > 0)
             m_BatAh1avg.dbl = 100 * m_CapAhUsed.dbl / (100 - b_BatSoCavg.dbl);
         if (100 - b_BatSoCmin.dbl > 0)
             m_BatAh1min.dbl = 100 * m_CapAhUsed.dbl / (100 - b_BatSoCmin.dbl);
         if (cellsData) {
             if (100 - m_CellAhmax.SoC > 0)
-                m_CellAhmax.capAh1 = 100 * m_CapAhUsed.dbl / (100- m_CellAhmax.SoC);
+                m_CellAhmax.capAh1 = 100 * m_CapAhUsed.dbl / (100 - m_CellAhmax.SoC);
             if (100 - m_SoCavg.dbl > 0)
                 m_Cap1AhavgDisplay.dbl = 100 * m_CapAhUsed.dbl / (100 - m_SoCavg.dbl);
             if (100 - m_CellAhmin.SoC > 0)
