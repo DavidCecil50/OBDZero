@@ -2292,10 +2292,12 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         if (c_WhRem.dbl > t_WhReq.dbl) {
-            if (d_Second < 10) t_Speed.dbl += 0.3 * d_Second; else t_Speed.dbl += 3;
+            if (d_Second < 10) t_Speed.dbl += 0.3 * d_Second;
+            else t_Speed.dbl += 3;
             if (t_Speed.dbl > 110.4) t_Speed.dbl = 110.4;
         } else {
-            if (d_Second < 10) t_Speed.dbl -= 0.3 * d_Second; else t_Speed.dbl -= 3;
+            if (d_Second < 10) t_Speed.dbl -= 0.3 * d_Second;
+            else t_Speed.dbl -= 3;
             if (t_Speed.dbl < 49.6) t_Speed.dbl = 49.6;
         }
     }
