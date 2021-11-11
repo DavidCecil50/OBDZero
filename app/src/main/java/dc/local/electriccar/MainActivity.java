@@ -665,18 +665,16 @@ public class MainActivity extends AppCompatActivity {
                 continueOnStart();
             }
         } else {
-            if (Environment.isExternalStorageManager()) {
-                storePermitted = true;
-            } else {
-                storePermitted = false;
-                listInfo.add("app:In order for OBDZero to save");
-                listInfo.add("app:data and initial values");
-                listInfo.add("app:please give OBDZero");
-                listInfo.add("app:All files Access permission");
-                listInfo.add("app:via the phone settings");
-                listInfo.add("app:then restart OBDZero");
-                updateFrag(FRAG_INFO);
-            }
+            storePermitted = false;
+            listInfo.add("app:Google requires the use of");
+            listInfo.add("app:'scoped storage' on Android 11+");
+            listInfo.add("app:phones such as this.");
+            listInfo.add("app:OBDZero cannot as yet save files");
+            listInfo.add("app:in 'scoped storage'. All other");
+            listInfo.add("app:functions work under Android 11");
+            listInfo.add("app:Consider using an older phone with");
+            listInfo.add("app:Android less than 11.");
+            updateFrag(FRAG_INFO);
             continueOnStart();
         }
     }
