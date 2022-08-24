@@ -12,8 +12,7 @@ import android.widget.TextView;
 import java.util.ArrayList;
 
 public class FragmentCalc extends Fragment {
-    private static final String TAG = "FragmentCalc";
-    private static final boolean DEBUG = true;
+    private static final String TAG = "FragmentCalc:";
     private static final TextView[] calcView = new TextView[40];
 
     static FragmentCalc newInstance() {
@@ -79,7 +78,7 @@ public class FragmentCalc extends Fragment {
         try {
             for (int i = 0; i < 37; i++) calcView[i].setText(arrayCalc.get(i));
         } catch (Exception e) {
-            if (DEBUG) Log.i(TAG, " refreshing" + e);
+            Log.e(TAG, "refreshing" + e);
         }
     }
 }

@@ -18,8 +18,7 @@ import java.util.ArrayList;
 
 
 public class FragmentCap1 extends Fragment {
-    private static final String TAG = "FragmentCap1";
-    private static final boolean DEBUG = true;
+    private static final String TAG = "FragmentCap1:";
     private static Context appContext;
     private static final TextView[] calcView = new TextView[25];
     private static final ListView[] instructions = new ListView[1];
@@ -39,7 +38,7 @@ public class FragmentCap1 extends Fragment {
         try {
             appContext = getContext();
         } catch (Exception e) {
-            if (DEBUG) Log.i(TAG, " refreshing" + e);
+            Log.e(TAG, "onCreateView " + e);
         }
 
         calcView[0] = view.findViewById(R.id.cap1102);
@@ -85,7 +84,7 @@ public class FragmentCap1 extends Fragment {
                 "equal to about 4 km remaining range.\n" +
                 "The car must be turned on to ready\n" +
                 "Charging the car is not a step in this procedure.\n");
-        listInstructions[1] = ("Try running the heater to reduce the SoC.\n");
+        listInstructions[1] = ("Running the heater will reduce the SoC.\n");
         listInstructions[2] = ("Now the SoCs of the cells are\n" +
                 "measured. This requires 30 minutes at\n" +
                 "low load = amps less than 1.\n");
@@ -93,6 +92,8 @@ public class FragmentCap1 extends Fragment {
     }
 
     private static void StepInstructions(final int instruction) {
+
+        listInstructions[1] = ("Run the heater for about " + MainActivity.computeMinutesWithHeater() + " min.\n");
 
         if (instruction == 3) {
             listInstructions[3] = ("The measurement is complete.\n" +
@@ -114,7 +115,8 @@ public class FragmentCap1 extends Fragment {
             ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(appContext,
                     R.layout.list_text_instructions, R.id.one_line, listInstructions) {
 
-                 @Override
+                @NonNull
+                @Override
                 public View getView(int position, View convertView, @NonNull ViewGroup parent) {
                     // Get the Item from ListView
                     View view = super.getView(position, convertView, parent);
@@ -137,19 +139,20 @@ public class FragmentCap1 extends Fragment {
             instructions[0].setSelection(instruction);
 
         } catch (Exception e) {
-            if (DEBUG) Log.i(TAG, " instructions" + e);
+           Log.e(TAG, "instructions" + e);
         }
     }
 
     static void Refresh(ArrayList<String> arrayCalc, int step) {
         int instruction;
-        if (step > 3) instruction = 3; else instruction = Math.max(step, 0);
+        if (step > 3) instruction = 3;
+        else instruction = Math.max(step, 0);
         try {
             int arrayLen = Math.min(calcView.length, arrayCalc.size());
             for (int i = 0; i < arrayLen; i++) calcView[i].setText(arrayCalc.get(i));
             StepInstructions(instruction);
         } catch (Exception e) {
-            if (DEBUG) Log.i(TAG, " refreshing" + e);
+            Log.e(TAG, "refreshing" + e);
         }
     }
 }

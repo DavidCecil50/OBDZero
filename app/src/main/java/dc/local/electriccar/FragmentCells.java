@@ -17,8 +17,7 @@ import android.widget.Toast;
 
 
 public class FragmentCells extends Fragment {
-    private static final String TAG = "FragmentCells";
-    private static final boolean DEBUG = true;
+    private static final String TAG = "FragmentCells:";
     private static Context appContext = null;
     private static final GridView[] gridView = new GridView[1];
     private static final String[] numbers = new String[250];
@@ -127,6 +126,7 @@ public class FragmentCells extends Fragment {
             try {
                 final ArrayAdapter<String> adapter = new ArrayAdapter<String>(appContext,
                         R.layout.list_text_12center, R.id.one_cell, numbers) {
+                    @NonNull
                     @Override
                     public View getView(int position, View convertView, @NonNull ViewGroup parent) {
                         // Get the Item from ListView
@@ -147,7 +147,7 @@ public class FragmentCells extends Fragment {
                 gridView[0].setAdapter(adapter);
 
             } catch (Exception e) {
-                if (DEBUG) Log.i(TAG, " refreshing" + e);
+                Log.e(TAG, "refreshing" + e);
             }
 
         } else {

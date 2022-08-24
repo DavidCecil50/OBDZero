@@ -11,11 +11,13 @@ import static dc.local.electriccar.MainActivity.PREFERRED_MARGIN;
 import static dc.local.electriccar.MainActivity.CAR_LOAD;
 import static dc.local.electriccar.MainActivity.RANGE_UNITS;
 import static dc.local.electriccar.MainActivity.ODO_UNITS;
+import static dc.local.electriccar.MainActivity.RECORD_TIME;
 
 public class InitialValuesActivity extends Activity {
     private EditText textValue1;
     private EditText textValue2;
     private EditText textValue3;
+    private EditText textValue4;
     private Button btnRangeUnits;
     private String rangeUnits;
     private Button btnOdoUnits;
@@ -32,6 +34,8 @@ public class InitialValuesActivity extends Activity {
         textValue2.setText(MainActivity.i_Margin.str());
         textValue3 = findViewById(R.id.value_load);
         textValue3.setText(MainActivity.i_Load.str());
+        textValue4 = findViewById(R.id.record_sec);
+        textValue4.setText(MainActivity.i_RecordTime.str());
 
         rangeUnits = MainActivity.i_RangeUnits;
         btnRangeUnits = findViewById(R.id.range_units);
@@ -75,6 +79,7 @@ public class InitialValuesActivity extends Activity {
         intent.putExtra(CAR_LOAD, textValue3.getText().toString());
         intent.putExtra(RANGE_UNITS, rangeUnits);
         intent.putExtra(ODO_UNITS, odoUnits);
+        intent.putExtra(RECORD_TIME, textValue4.getText().toString());
 
         setResult(RESULT_OK, intent);
         finish();

@@ -18,8 +18,7 @@ import java.util.ArrayList;
 
 
 public class FragmentOBD extends Fragment {
-    private static final String TAG = "FragmentOBD";
-    private static final boolean DEBUG = true;
+    private static final String TAG = "FragmentOBD:";
     private static Context appContext;
     private static final ListView[] list = new ListView[1];
 
@@ -43,15 +42,13 @@ public class FragmentOBD extends Fragment {
     static void Refresh(ArrayList<String> arrayOBD) {
         int position = list[0].getFirstVisiblePosition();
         arrayOBD.add("");
-        if (arrayOBD.size() > 0) {
-            try {
-                ArrayAdapter<String> listAdapter = new ArrayAdapter<>(appContext,
-                        R.layout.list_text_14left, arrayOBD);
-                list[0].setAdapter(listAdapter);
-                list[0].setSelection(position);
-            } catch (Exception e) {
-                if (DEBUG) Log.i(TAG, " refreshing" + e);
-            }
+        try {
+            ArrayAdapter<String> listAdapter = new ArrayAdapter<>(appContext,
+                    R.layout.list_text_14left, arrayOBD);
+            list[0].setAdapter(listAdapter);
+            list[0].setSelection(position);
+        } catch (Exception e) {
+            Log.e(TAG, "refreshing" + e);
         }
 
         if (MainActivity.checkOdoUnits) {

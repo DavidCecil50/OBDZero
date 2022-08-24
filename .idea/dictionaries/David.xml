@@ -13,9 +13,14 @@
       <w>atcaf</w>
       <w>atcf</w>
       <w>atcm</w>
+      <w>atcmd</w>
       <w>atdp</w>
+      <w>atfcsd</w>
+      <w>atfcsh</w>
+      <w>atfcsm</w>
       <w>atma</w>
       <w>atpp</w>
+      <w>atsh</w>
       <w>atsp</w>
       <w>atstff</w>
       <w>atws</w>
@@ -47,6 +52,8 @@
       <w>fulltime</w>
       <w>gridview</w>
       <w>higho</w>
+      <w>intg</w>
+      <w>intr</w>
       <w>loadkg</w>
       <w>lowo</w>
       <w>maxsum</w>
@@ -69,6 +76,7 @@
       <w>rtest</w>
       <w>spdavg</w>
       <w>speedavg</w>
+      <w>strg</w>
       <w>strunit</w>
       <w>timestep</w>
       <w>tmax</w>

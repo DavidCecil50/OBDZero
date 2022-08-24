@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -22,8 +23,7 @@ import java.text.DecimalFormat;
 
 
 public class FragmentDrive extends Fragment {
-    private static final String TAG = "FragmentCells";
-    private static final boolean DEBUG = true;
+    private static final String TAG = "FragmentDrive:";
     private static Context appContext = null;
     private static final EditText[] textDistance = new EditText[1];
     private static final TextView[] textDrive = new TextView[4];
@@ -87,7 +87,7 @@ public class FragmentDrive extends Fragment {
                         try {
                             drvNumber = Double.parseDouble(drvDistance);
                         } catch (NumberFormatException e) {
-                            if (DEBUG) Log.i(TAG, " editing not a number" + e);
+                            Log.e(TAG, "editing not a number" + e);
                         }
 
                         if (MainActivity.miles) {
@@ -99,7 +99,7 @@ public class FragmentDrive extends Fragment {
                         mEditing = false;
 
                         // the user is done typing.
-                        InputMethodManager imm = (InputMethodManager)v.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+                        InputMethodManager imm = (InputMethodManager) v.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
                         imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
 
                         return true; // consume.
@@ -146,13 +146,13 @@ public class FragmentDrive extends Fragment {
     static void Refresh() {
         if (!mEditing) {
             String drvSpeed;
-            if (MainActivity.t_Speed.dbl < 50)
-                if (MainActivity.mph) drvSpeed = "< 30";
-                else drvSpeed = "< 50";
+            if (MainActivity.t_Speed.dbl < 25)
+                if (MainActivity.mph) drvSpeed = "15";
+                else drvSpeed = "25";
             else {
-                if (MainActivity.t_Speed.dbl > 110) {
-                    if (MainActivity.mph) drvSpeed = "70";
-                    else drvSpeed = "110";
+                if (MainActivity.t_Speed.dbl > 130) {
+                    if (MainActivity.mph) drvSpeed = "80";
+                    else drvSpeed = "130";
                 } else {
                     if (MainActivity.mph)
                         drvSpeed = decFix0.format(0.621371192 * MainActivity.t_Speed.dbl);
@@ -160,6 +160,14 @@ public class FragmentDrive extends Fragment {
                 }
             }
             textDrive[2].setText(drvSpeed);
+
+            if (MainActivity.t_WhReq.dbl < 0.95 * MainActivity.c_WhRem.dbl)
+                textDrive[2].setTextColor(Color.rgb(100, 255, 100));
+            else if (MainActivity.t_WhReq.dbl < 1.05 * MainActivity.c_WhRem.dbl)
+                textDrive[2].setTextColor(Color.rgb(255, 255, 255));
+            else if (MainActivity.t_WhReq.dbl < 1.15 * MainActivity.c_WhRem.dbl)
+                textDrive[2].setTextColor(Color.rgb(255, 202, 28));
+            else textDrive[2].setTextColor(Color.rgb(255, 100, 100));
 
             if (MainActivity.t_km.dbl > 0) {
                 textDrive[3].setText("Suggested speed to the station");
@@ -176,7 +184,7 @@ public class FragmentDrive extends Fragment {
 
         }
 
-        if (MainActivity.checkRangeUnits) {
+        if (MainActivity.checkRangeUnits && MainActivity.c_Margin.dbl > 10) {
             CharSequence text = "Check the if the range shown on the instrument panel is in miles. " +
                     "If so change the range units in the initials values menu";
             int duration = Toast.LENGTH_LONG;

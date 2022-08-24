@@ -12,7 +12,6 @@
     <string name="frag_button_4">Watts</string>
     <string name="frag_button_5">Drive</string>
 
-
     <string name="distance_title">Distance to the next charging station</string>
     <string name="distance_value">0</string>
     <string name="distance_units">km</string>
@@ -37,13 +36,9 @@
     <string name="alert_dialog_ok">OK</string>
 
     <!--  DeviceListActivity -->
-    <string name="scanning">Scanning for devices…</string>
-    <string name="select_device">Select a device to connect</string>
-    <string name="none_paired">No devices have been paired</string>
-    <string name="none_found">No devices found</string>
-    <string name="title_paired_devices">Paired Devices</string>
-    <string name="title_other_devices">Please pair these devices using phone settings before starting this app</string>
-    <string name="button_scan">Scan for devices</string>
+    <string name="select_device">Select a dongle to connect</string>
+    <string name="none_paired">No dongles have been paired. Scan and pair using the phone settings then run OBDZero again. </string>
+    <string name="other_devices">If the dongle you want is not on the list. Scan and pair other dongles using the phone settings then run OBDZero again.</string>
 
     <!-- Standard values for calculations -->
     <string name="initial_values">Values needed for calculations:</string>
@@ -54,11 +49,10 @@
     <string name="initial_odo">Odometer shown on the OBD screen, is it in km or miles?</string>
     <string name="button_km_miles">km</string>
     <string name="button_update">update</string>
-
+    <string name="initial_record">Recording minimum seconds:</string>
 
     <!-- Don't localize these default values -->
     <string name="car_about">car</string>
-    <string name="toggle_secure">secure connections only</string>
     <string name="toggle_button"><![CDATA[<>]]></string>
 
 </resources>

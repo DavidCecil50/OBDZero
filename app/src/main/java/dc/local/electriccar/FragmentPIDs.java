@@ -16,8 +16,7 @@ import android.widget.ListView;
 import java.util.ArrayList;
 
 public class FragmentPIDs extends Fragment {
-    private static final String TAG = "FragmentPID";
-    private static final boolean DEBUG = true;
+    private static final String TAG = "FragmentPID:";
     private static Context appContext;
     private static final ListView[] list = new ListView[1];
 
@@ -46,15 +45,13 @@ public class FragmentPIDs extends Fragment {
             if (aPID.isFound) arrayPIDs.add(aPID.linePID);
         }
         arrayPIDs.add("");
-        if (arrayPIDs.size() > 0) {
-            try {
-                ArrayAdapter<String> listAdapter = new ArrayAdapter<>(appContext,
-                        R.layout.list_text_15left, arrayPIDs);
-                list[0].setAdapter(listAdapter);
-                list[0].setSelection(position);
-            } catch (Exception e) {
-                if (DEBUG) Log.i(TAG, " refreshing" + e);
-            }
+        try {
+            ArrayAdapter<String> listAdapter = new ArrayAdapter<>(appContext,
+                    R.layout.list_text_15left, arrayPIDs);
+            list[0].setAdapter(listAdapter);
+            list[0].setSelection(position);
+        } catch (Exception e) {
+            Log.e(TAG, "refreshing" + e);
         }
     }
 }

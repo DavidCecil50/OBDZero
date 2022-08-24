@@ -13,12 +13,12 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+
 import java.util.ArrayList;
 
 
 public class FragmentCap2 extends Fragment {
-    private static final String TAG = "FragmentCap2";
-    private static final boolean DEBUG = true;
+    private static final String TAG = "FragmentCap2:";
     private static Context appContext;
     private static final TextView[] calcView = new TextView[25];
     private static final ListView[] instructions = new ListView[1];
@@ -79,7 +79,7 @@ public class FragmentCap2 extends Fragment {
                 "before the measurement can begin.\n" +
                 "None of the steps in the procedure need to\n" +
                 "be done immediately after the previous step.\n");
-        listInstructions[1] = ("Try running the heater to reduce the SoC.\n");
+        listInstructions[1] = ("Running the heater will reduce the SoC.\n");
         listInstructions[2] = ("Now the SoC of all the cells is measured\n" +
                 "This requires 30 minutes at low\n" +
                 "load = amps less than 1.\n");
@@ -104,6 +104,9 @@ public class FragmentCap2 extends Fragment {
 
     private static void StepInstructions(final int instruction) {
 
+        if (!MainActivity.computeMinutesWithHeater().equals("-1"))
+            listInstructions[1] = ("Run the heater for about " + MainActivity.computeMinutesWithHeater() + " min.\n");
+
         if (instruction == 8) {
             listInstructions[8] = ("The measurement is complete.\n" +
                     "The capacitys of the highest and\n" +
@@ -121,6 +124,7 @@ public class FragmentCap2 extends Fragment {
             ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(appContext,
                     R.layout.list_text_instructions, R.id.one_line, listInstructions) {
 
+                @NonNull
                 @Override
                 public View getView(int position, View convertView, @NonNull ViewGroup parent) {
                     // Get the Item from ListView
@@ -144,18 +148,19 @@ public class FragmentCap2 extends Fragment {
             instructions[0].setSelection(instruction);
 
         } catch (Exception e) {
-            if (DEBUG) Log.i(TAG, " instructions" + e);
+            Log.e(TAG, "instructions" + e);
         }
     }
 
     static void Refresh(ArrayList<String> arrayCalc, int step) {
         int instruction;
-        if (step > 8) instruction = 8; else instruction = Math.max(step, 0);
+        if (step > 8) instruction = 8;
+        else instruction = Math.max(step, 0);
         int arrayLen = Math.min(calcView.length, arrayCalc.size());
         try {
             for (int i = 0; i < arrayLen; i++) calcView[i].setText(arrayCalc.get(i));
         } catch (Exception e) {
-            if (DEBUG) Log.i(TAG, " refreshing" + e);
+            Log.e(TAG, "refreshing" + e);
         }
         StepInstructions(instruction);
     }

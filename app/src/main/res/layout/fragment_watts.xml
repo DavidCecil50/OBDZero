@@ -4,15 +4,6 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="0.08"
-        android:focusable="false"
-        android:padding="5dp"
-        android:text="@string/watts_title"
-        android:textSize="14sp" />
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -45,7 +36,7 @@
         android:layout_weight="0.08"
         android:focusable="false"
         android:padding="5dp"
-        android:text="@string/whkm_title"
+        android:text="@string/watts_title"
         android:textSize="14sp" />
 
     <LinearLayout
@@ -81,7 +72,7 @@
         android:layout_weight="0.08"
         android:focusable="false"
         android:padding="5dp"
-        android:text="@string/kmh_title"
+        android:text="@string/whkm_title"
         android:textSize="14sp" />
 
     <LinearLayout
@@ -108,7 +99,15 @@
             android:text="@string/speed_units"
             android:textColor="#ffffff"
             android:textSize="26sp" />
-
     </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="0.08"
+            android:focusable="false"
+            android:padding="5dp"
+            android:text="@string/kmh_title"
+            android:textSize="14sp" />
 
 </LinearLayout>
