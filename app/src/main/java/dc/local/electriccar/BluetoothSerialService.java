@@ -104,8 +104,17 @@ class BluetoothSerialService {
     private synchronized void setState(int state) {
         if (DEBUG) Log.i(TAG, "setState() " + mState + " -> " + state);
         mState = state;
+        Message msg = handlerMessage.obtainMessage(MainActivity.MESSAGE_STATE_CHANGE);
+        Bundle bundle = new Bundle();
         // Give the new state to the Handler so the UI Activity can update
-        handlerMessage.obtainMessage(MainActivity.MESSAGE_STATE_CHANGE, state, -1).sendToTarget();
+        //handlerMessage.obtainMessage(MainActivity.MESSAGE_STATE_CHANGE, state, -1).sendToTarget();
+        bundle.putInt(MainActivity.STATE, mState);
+        msg.setData(bundle);
+        try {
+            handlerMessage.sendMessage(msg);
+        } catch (Exception e) {
+            if (DEBUG) Log.e(TAG, "send state change", e);
+        }
     }
 
     /**
@@ -113,6 +122,38 @@ class BluetoothSerialService {
      */
     synchronized int getState() {
         return mState;
+    }
+
+    @SuppressLint("MissingPermission")
+    private void sendDeviceName(BluetoothDevice device) {
+        // Send the name of the connecting device back to the UI Activity
+        Message msg = handlerMessage.obtainMessage(MainActivity.MESSAGE_DEVICE_NAME);
+        Bundle bundle = new Bundle();
+        try {
+            bundle.putString(MainActivity.DEVICE_NAME, device.getName());
+        } catch (Exception e) {
+            if (DEBUG) Log.e(TAG, "device name failed", e);
+            bundle.putString(MainActivity.DEVICE_NAME, "none");
+        }
+        msg.setData(bundle);
+        try {
+            handlerMessage.sendMessage(msg);
+        } catch (Exception e) {
+            if (DEBUG) Log.e(TAG, "send device name", e);
+        }
+    }
+
+    // This sends one line of received data to the main activity also called the UI David Cecil
+    private void sendMessage(String strMessage) {
+        Message msg = handlerMessage.obtainMessage(MainActivity.MESSAGE_RECEIVED);
+        Bundle bundle = new Bundle();
+        bundle.putString(MainActivity.RECEIVED_LINE, strMessage);
+        msg.setData(bundle);
+        try {
+            handlerMessage.sendMessage(msg);
+        } catch (Exception e) {
+            if (DEBUG) Log.e(TAG, "send message", e);
+        }
     }
 
     /**
@@ -189,7 +230,7 @@ class BluetoothSerialService {
     /**
      * Stop all threads
      */
-    synchronized void disConnect() {
+    synchronized void disconnect() {
         if (DEBUG) Log.i(TAG, "disconnect");
         stopCollector();
         if (mConnectThread != null) {
@@ -216,21 +257,6 @@ class BluetoothSerialService {
     private void connectionLost() {
         if (DEBUG) Log.i(TAG, "connection lost");
         setState(STATE_LOST);
-    }
-
-    @SuppressLint("MissingPermission")
-    private void sendDeviceName(BluetoothDevice device) {
-        // Send the name of the connecting device back to the UI Activity
-        Message msg = handlerMessage.obtainMessage(MainActivity.MESSAGE_DEVICE_NAME);
-        Bundle bundle = new Bundle();
-        try {
-            bundle.putString(MainActivity.DEVICE_NAME, device.getName());
-        } catch (Exception e) {
-            if (DEBUG) Log.e(TAG, "Device name failed", e);
-            bundle.putString(MainActivity.DEVICE_NAME, "none");
-        }
-        msg.setData(bundle);
-        handlerMessage.sendMessage(msg);
     }
 
     // Reset the OBD prior to data collection David Cecil
@@ -306,15 +332,6 @@ class BluetoothSerialService {
         write(command.getBytes());
     }
 
-    // This sends one line of received data to the main activity also called the UI David Cecil
-    private void sendMessage(String strMessage) {
-        Message msg = handlerMessage.obtainMessage(MainActivity.MESSAGE_RECEIVED);
-        Bundle bundle = new Bundle();
-        bundle.putString(MainActivity.RECEIVED_LINE, strMessage);
-        msg.setData(bundle);
-        handlerMessage.sendMessage(msg);
-    }
-
     /**
      * Write to the ConnectedThread in an unsynchronized manner
      *
@@ -330,7 +347,11 @@ class BluetoothSerialService {
             r = mConnectedThread;
         }
         // Perform the write unsynchronized
-        r.write(out);
+        try {
+            r.write(out);
+        } catch(Exception e){
+            if (DEBUG) Log.e(TAG, "write to connected thread", e);
+        }
     }
 
     /**
@@ -353,7 +374,7 @@ class BluetoothSerialService {
                 tmp = device.createRfcommSocketToServiceRecord(SerialPortServiceClass_UUID);
             } catch (Exception e) {
                 if (DEBUG) Log.e(TAG, "connect thread failed", e);
-                sendMessage("connect thread failed.");
+                sendMessage("Exception connect thread failed.");
             }
             mmSocket = tmp;
         }
@@ -366,18 +387,18 @@ class BluetoothSerialService {
             if (mmSocket != null) {
                 try {
                     // This is a blocking call and will only return on a
-                    // successful connection or an exception
+                    // successful connection or an Exception
                     mmSocket.connect();
                 } catch (Exception e) {
-                    if (DEBUG) Log.e(TAG, "connect couldn't be made", e);
-                    sendMessage("connect couldn't be made");
+                    if (DEBUG) Log.e(TAG, "connection couldn't be made", e);
                     connectionFailed();
                     // Close the socket
                     try {
                         mmSocket.close();
                     } catch (Exception e2) {
-                        if (DEBUG) Log.e(TAG, "unable to close() socket during connection failure", e2);
-                        sendMessage("unable to close() socket during connection failure.");
+                        if (DEBUG)
+                            Log.e(TAG, "unable to close() socket during connection failure", e2);
+                        sendMessage("Exception unable to close() socket during connection failure.");
                     }
                     return;
                 }
@@ -400,7 +421,7 @@ class BluetoothSerialService {
                     mmSocket.close();
                 } catch (Exception e) {
                     if (DEBUG) Log.e(TAG, "close() of connect socket failed", e);
-                    sendMessage("close() of connect socket failed");
+                    sendMessage("Exception close() of connect socket failed");
                 }
             } else {
                 if (DEBUG) Log.i(TAG, "no socket was found");
@@ -431,8 +452,7 @@ class BluetoothSerialService {
                 tmpOut = socket.getOutputStream();
             } catch (Exception e) {
                 if (DEBUG) Log.e(TAG, "temp sockets not created", e);
-                sendMessage("temp sockets not created");
-                sendMessage("EXCEPTION");
+                sendMessage("Exception temp sockets not created");
             }
 
             mmInStream = tmpIn;
@@ -454,7 +474,6 @@ class BluetoothSerialService {
                         bytes = mmInStream.read(buffer);
                     } catch (Exception e) {
                         if (DEBUG) Log.e(TAG, "disconnected", e);
-                        sendMessage(TAG + "disconnected ");
                         connectionLost();
                         break;
                     }
@@ -470,8 +489,6 @@ class BluetoothSerialService {
                                     lineIndex = 0;
                                     lineCount++;
                                     if (lineReceived.length() > 0) sendMessage(lineReceived);
-                                    if (lineReceived.contains("DATA ERROR"))
-                                        sendMessage("DATA ERROR");
                                     if (runCollect) {
                                         if (tickNo == 0 && lineCount % 20 == 2) writeSpaces();
                                     } else if (runBMU) {
@@ -569,9 +586,8 @@ class BluetoothSerialService {
                 try {
                     mmOutStream.write(buffer);
                 } catch (Exception e) {
-                    if (DEBUG) Log.e(TAG, "exception during write", e);
-                    sendMessage("exception during write.");
-                    sendMessage("EXCEPTION");
+                    if (DEBUG) Log.e(TAG, "Exception during write", e);
+                    sendMessage("Exception during write.");
                 }
         }
 
@@ -581,8 +597,7 @@ class BluetoothSerialService {
                     mmSocket.close();
                 } catch (Exception e) {
                     if (DEBUG) Log.e(TAG, "close() of connect socket failed", e);
-                    sendMessage("close() of connect socket failed.");
-                    sendMessage("EXCEPTION");
+                    sendMessage("Exception close() of connect socket failed.");
                 }
         }
     }

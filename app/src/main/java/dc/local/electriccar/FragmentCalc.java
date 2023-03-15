@@ -1,5 +1,7 @@
 package dc.local.electriccar;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import android.os.Bundle;
@@ -72,6 +74,12 @@ public class FragmentCalc extends Fragment {
         calcView[36] = view.findViewById(R.id.calc615);
 
         return view;
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        Refresh(MainActivity.arrayOBD);
     }
 
     static void Refresh(ArrayList<String> arrayCalc) {

@@ -26,7 +26,6 @@ public class FragmentCells extends Fragment {
     private static final boolean[] highoC = new boolean[250];
     private static final boolean[] lowoC = new boolean[250];
 
-
     static FragmentCells newInstance() {
         return new FragmentCells();
     }
@@ -62,6 +61,13 @@ public class FragmentCells extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         appContext = getContext();
         gridView[0] = view.findViewById(R.id.gridview_cells);
+        if (!MainActivity.cellsData) {
+            CharSequence text = "There is no cell data yet or " +
+                    "this model and year does not provide cell data.";
+            int duration = Toast.LENGTH_SHORT;
+            Toast toast = Toast.makeText(appContext.getApplicationContext(), text, duration);
+            toast.show();
+        }
     }
 
     static void Refresh(final Cell[] cells, boolean cellsData,

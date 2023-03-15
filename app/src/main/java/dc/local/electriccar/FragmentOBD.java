@@ -37,6 +37,7 @@ public class FragmentOBD extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         appContext = getContext();
+        Refresh(MainActivity.arrayOBD);
     }
 
     static void Refresh(ArrayList<String> arrayOBD) {

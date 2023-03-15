@@ -89,6 +89,9 @@ public class FragmentCap1 extends Fragment {
                 "measured. This requires 30 minutes at\n" +
                 "low load = amps less than 1.\n");
         StepInstructions(0);
+
+        Refresh(MainActivity.arrayOBD, 0);
+
     }
 
     private static void StepInstructions(final int instruction) {
@@ -143,13 +146,13 @@ public class FragmentCap1 extends Fragment {
         }
     }
 
-    static void Refresh(ArrayList<String> arrayCalc, int step) {
+    static void Refresh(ArrayList<String> arrayCap1, int step) {
         int instruction;
         if (step > 3) instruction = 3;
         else instruction = Math.max(step, 0);
         try {
-            int arrayLen = Math.min(calcView.length, arrayCalc.size());
-            for (int i = 0; i < arrayLen; i++) calcView[i].setText(arrayCalc.get(i));
+            int arrayLen = Math.min(calcView.length, arrayCap1.size());
+            for (int i = 0; i < arrayLen; i++) calcView[i].setText(arrayCap1.get(i));
             StepInstructions(instruction);
         } catch (Exception e) {
             Log.e(TAG, "refreshing" + e);

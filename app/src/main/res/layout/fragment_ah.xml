@@ -1,119 +1,123 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    tools:ignore="Suspicious0dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="0.2533"
-        android:orientation="horizontal">
-
-        <EditText
-            android:id="@+id/text_distance"
-            android:layout_width="230dp"
-            android:layout_height="match_parent"
-            android:gravity="end|center"
-            android:inputType="phone"
-            android:padding="6dip"
-            android:text="@string/distance_value"
-            android:textSize="90sp"
-            android:imeOptions="actionDone"
-            tools:ignore="Autofill,LabelFor" />
+        android:orientation="horizontal"
+        tools:ignore="NestedWeights">
 
         <TextView
-            android:id="@+id/distance_units"
-            android:layout_width="wrap_content"
+            android:id="@+id/number_1"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:focusable="false"
+            android:layout_weight="4"
+            android:gravity="end|center"
+            android:padding="6dip"
+            android:textColor="#ffffff"
+            android:textSize="90sp" />
+
+        <TextView
+            android:id="@+id/units_1"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
             android:gravity="start|center"
-            android:text="@string/distance_units"
+            android:textColor="#ffffff"
             android:textSize="26sp" />
 
     </LinearLayout>
 
     <TextView
+        android:id="@+id/text_1"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="0.08"
         android:focusable="false"
         android:padding="5dp"
-        android:text="@string/distance_title"
-        android:textSize="14sp" />
+        android:textSize="18sp" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="0.2533">
+        android:layout_weight="0.2533"
+        android:orientation="horizontal"
+        tools:ignore="NestedWeights">
 
         <TextView
-            android:id="@+id/text_margin"
-            android:layout_width="230dp"
+            android:id="@+id/number_2"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
+            android:layout_weight="4"
             android:focusable="false"
             android:gravity="end|center"
             android:padding="6dip"
-            android:text="@string/margin_value"
             android:textColor="#ffffff"
             android:textSize="90sp" />
 
-        <Button
-            android:id="@+id/km_units"
-            android:layout_width="wrap_content"
+        <TextView
+            android:id="@+id/units_2"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
+            android:layout_weight="1"
             android:gravity="start|center"
-            android:text="@string/distance_units"
             android:textColor="#ffffff"
             android:textSize="26sp" />
 
     </LinearLayout>
 
     <TextView
+        android:id="@+id/text_2"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="0.08"
         android:focusable="false"
         android:padding="5dp"
-        android:text="@string/margin_title"
-        android:textSize="14sp" />
+        android:textSize="18sp" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="0.2533">
+        android:layout_weight="0.2533"
+        android:orientation="horizontal"
+        tools:ignore="NestedWeights">
 
         <TextView
-            android:id="@+id/text_speed"
-            android:layout_width="230dp"
+            android:id="@+id/number_3"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
+            android:layout_weight="4"
             android:focusable="false"
             android:gravity="end|center"
             android:padding="6dip"
-            android:text="@string/speed_value"
             android:textColor="#ffffff"
             android:textSize="90sp" />
 
-        <Button
-            android:id="@+id/speed_units"
-            android:layout_width="wrap_content"
+        <TextView
+            android:id="@+id/units_3"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
+            android:layout_weight="1"
             android:gravity="start|center"
-            android:text="@string/speed_units"
             android:textColor="#ffffff"
             android:textSize="26sp" />
 
     </LinearLayout>
 
     <TextView
-        android:id="@+id/title_speed"
+        android:id="@+id/text_3"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="0.08"
         android:focusable="false"
-        android:text="@string/speed_title"
         android:padding="5dp"
-        android:textSize="14sp" />
+        android:textSize="18sp" />
 
 </LinearLayout>

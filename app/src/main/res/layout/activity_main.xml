@@ -6,7 +6,7 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="40dp"
+        android:layout_height="50dp"
         android:orientation="horizontal">
 
         <Button
@@ -15,8 +15,7 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:text="@string/frag_button_1"
-            android:textSize="12sp" />
+            android:textSize="20sp" />
 
         <Button
             android:id="@+id/button2"
@@ -24,8 +23,7 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:text="@string/frag_button_2"
-            android:textSize="12sp" />
+            android:textSize="20sp" />
 
         <Button
             android:id="@+id/button3"
@@ -33,8 +31,7 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:text="@string/frag_button_3"
-            android:textSize="12sp" />
+            android:textSize="20sp" />
 
         <Button
             android:id="@+id/button4"
@@ -42,8 +39,7 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:text="@string/frag_button_4"
-            android:textSize="12sp" />
+            android:textSize="20sp" />
 
         <Button
             android:id="@+id/button5"
@@ -51,8 +47,7 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:text="@string/frag_button_5"
-            android:textSize="12sp" />
+            android:textSize="20sp" />
 
     </LinearLayout>
 

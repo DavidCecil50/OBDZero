@@ -497,14 +497,14 @@
             <TextView
                 android:focusable="false"
                 android:gravity="center"
-                android:text="average"
+                android:text="wheel"
                 android:textColor="#ffffff"
                 android:textSize="16dp" />
 
             <TextView
                 android:focusable="false"
                 android:gravity="center"
-                android:text="true"
+                android:text="average"
                 android:textColor="#ffffff"
                 android:textSize="16dp"
                 tools:ignore="TooManyViews" />
@@ -576,7 +576,7 @@
             <TextView
                 android:focusable="false"
                 android:gravity="center"
-                android:text="car"
+                android:text="BMU"
                 android:textColor="#ffffff"
                 android:textSize="16dp" />
 
@@ -621,6 +621,13 @@
             <TextView
                 android:focusable="false"
                 android:gravity="center"
+                android:text="rest Ah"
+                android:textColor="#ffffff"
+                android:textSize="16dp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
                 android:text="SoC"
                 android:textColor="#ffffff"
                 android:textSize="16dp" />
@@ -628,14 +635,7 @@
             <TextView
                 android:focusable="false"
                 android:gravity="center"
-                android:text="Ah"
-                android:textColor="#ffffff"
-                android:textSize="16dp" />
-
-            <TextView
-                android:focusable="false"
-                android:gravity="center"
-                android:text="Ah"
+                android:text="rest Ah"
                 android:textColor="#ffffff"
                 android:textSize="16dp" />
 

@@ -146,9 +146,9 @@ public class FragmentDrive extends Fragment {
     static void Refresh() {
         if (!mEditing) {
             String drvSpeed;
-            if (MainActivity.t_Speed.dbl < 25)
-                if (MainActivity.mph) drvSpeed = "15";
-                else drvSpeed = "25";
+            if (MainActivity.t_Speed.dbl < 10)
+                if (MainActivity.mph) drvSpeed = "6";
+                else drvSpeed = "10";
             else {
                 if (MainActivity.t_Speed.dbl > 130) {
                     if (MainActivity.mph) drvSpeed = "80";
@@ -161,13 +161,17 @@ public class FragmentDrive extends Fragment {
             }
             textDrive[2].setText(drvSpeed);
 
-            if (MainActivity.t_WhReq.dbl < 0.95 * MainActivity.c_WhRem.dbl)
-                textDrive[2].setTextColor(Color.rgb(100, 255, 100));
-            else if (MainActivity.t_WhReq.dbl < 1.05 * MainActivity.c_WhRem.dbl)
-                textDrive[2].setTextColor(Color.rgb(255, 255, 255));
-            else if (MainActivity.t_WhReq.dbl < 1.15 * MainActivity.c_WhRem.dbl)
-                textDrive[2].setTextColor(Color.rgb(255, 202, 28));
-            else textDrive[2].setTextColor(Color.rgb(255, 100, 100));
+             if (MainActivity.c_Margin.dbl > 0) {
+                if (MainActivity.t_WhReq.dbl < 0.95 * MainActivity.c_WhRem10.dbl)
+                    textDrive[2].setTextColor(Color.rgb(100, 255, 100));
+                else if (MainActivity.t_WhReq.dbl < 1.05 * MainActivity.c_WhRem10.dbl)
+                    textDrive[2].setTextColor(Color.rgb(255, 255, 255));
+                else if (MainActivity.t_WhReq.dbl < 1.15 * MainActivity.c_WhRem10.dbl)
+                    textDrive[2].setTextColor(Color.rgb(255, 202, 28));
+                else textDrive[2].setTextColor(Color.rgb(255, 100, 100));
+            } else {
+                 textDrive[2].setTextColor(Color.rgb(255, 100, 100));
+             }
 
             if (MainActivity.t_km.dbl > 0) {
                 textDrive[3].setText("Suggested speed to the station");

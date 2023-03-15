@@ -36,6 +36,7 @@ public class FragmentInfo extends Fragment {
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         appContext = getContext();
+        Refresh(MainActivity.listInfo);
     }
 
     static void Refresh(ArrayList<String> arrayInfo) {

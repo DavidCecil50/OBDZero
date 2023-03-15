@@ -35,6 +35,7 @@ public class FragmentPIDs extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         appContext = getContext();
+        FragmentPIDs.Refresh(MainActivity.listPIDs);
     }
 
     static void Refresh(PID[] listPIDs) {

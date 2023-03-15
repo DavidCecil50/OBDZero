@@ -46,7 +46,7 @@ public class FragmentWatts extends Fragment {
 
     void writeWhkm() {
         double whkm = 110;
-        if (MainActivity.c_SpdAvg.dbl > 0) whkm = MainActivity.b_WAvgAux.dbl/MainActivity.c_SpdAvg.dbl;
+        if (MainActivity.c_Speed0Avg.dbl > 0) whkm = MainActivity.b_WAvgAux.dbl/MainActivity.c_Speed0Avg.dbl;
         if (MainActivity.milesPerkWh) {
             buttons[0].setText("miles/kWh");
             textWatts[1].setText(decFix0.format(621.37119 / whkm));
@@ -64,10 +64,10 @@ public class FragmentWatts extends Fragment {
     void writeSpeed() {
         if (MainActivity.mph) {
             buttons[1].setText("mph");
-            textWatts[2].setText(decFix0.format(0.621371192 * MainActivity.c_SpdAvg.dbl));
+            textWatts[2].setText(decFix0.format(0.621371192 * MainActivity.c_Speed0Avg.dbl));
         } else {
             buttons[1].setText("km/h");
-            textWatts[2].setText(decFix0.format(MainActivity.c_SpdAvg.dbl));
+            textWatts[2].setText(decFix0.format(MainActivity.c_Speed0Avg.dbl));
         }
     }
 
@@ -80,7 +80,7 @@ public class FragmentWatts extends Fragment {
         }
 
         double whkm = 110;
-        if (MainActivity.c_SpdAvg.dbl > 0) whkm = MainActivity.b_WAvgAux.dbl/MainActivity.c_SpdAvg.dbl;
+        if (MainActivity.c_Speed0Avg.dbl > 0) whkm = MainActivity.b_WAvgAux.dbl/MainActivity.c_Speed0Avg.dbl;
         if (MainActivity.milesPerkWh) {
             textWatts[1].setText(decFix0.format(621.37119 / whkm));
         } else {
@@ -88,9 +88,9 @@ public class FragmentWatts extends Fragment {
         }
 
         if (MainActivity.mph) {
-            textWatts[2].setText(decFix0.format(0.621371192 * MainActivity.c_SpdAvg.dbl));
+            textWatts[2].setText(decFix0.format(0.621371192 * MainActivity.c_Speed0Avg.dbl));
         } else {
-            textWatts[2].setText(decFix0.format(MainActivity.c_SpdAvg.dbl));
+            textWatts[2].setText(decFix0.format(MainActivity.c_Speed0Avg.dbl));
         }
     }
 }

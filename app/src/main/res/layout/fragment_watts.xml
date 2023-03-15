@@ -1,28 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    tools:ignore="Suspicious0dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="0.2533"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        tools:ignore="NestedWeights">
 
         <TextView
             android:id="@+id/text_watts"
-            android:layout_width="230dp"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:gravity="end|bottom"
+            android:layout_weight="9"
+            android:gravity="end|center"
             android:padding="6dip"
             android:text="@string/watts_value"
             android:textColor="#ffffff"
             android:textSize="90sp" />
 
         <TextView
-            android:layout_width="wrap_content"
+            android:id="@+id/text_units"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
+            android:layout_weight="4"
             android:focusable="false"
             android:gravity="start|center"
             android:text="@string/watts_units"
@@ -42,12 +49,15 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="0.2533">
+        android:layout_weight="0.2533"
+        android:orientation="horizontal"
+        tools:ignore="NestedWeights">
 
         <TextView
             android:id="@+id/text_whkm"
-            android:layout_width="230dp"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
+            android:layout_weight="9"
             android:focusable="false"
             android:gravity="end|center"
             android:padding="6dip"
@@ -57,8 +67,9 @@
 
         <Button
             android:id="@+id/whkm_units"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
+            android:layout_weight="4"
             android:gravity="start|center"
             android:text="@string/whkm_units"
             android:textColor="#ffffff"
@@ -78,12 +89,15 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="0.2533">
+        android:layout_weight="0.2533"
+        android:orientation="horizontal"
+        tools:ignore="NestedWeights">
 
         <TextView
             android:id="@+id/text_speedavg"
-            android:layout_width="230dp"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
+            android:layout_weight="9"
             android:focusable="false"
             android:gravity="end|center"
             android:padding="6dip"
@@ -93,21 +107,22 @@
 
         <Button
             android:id="@+id/speedavg_units"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
+            android:layout_weight="4"
             android:gravity="start|center"
             android:text="@string/speed_units"
             android:textColor="#ffffff"
             android:textSize="26sp" />
     </LinearLayout>
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="0.08"
-            android:focusable="false"
-            android:padding="5dp"
-            android:text="@string/kmh_title"
-            android:textSize="14sp" />
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0.08"
+        android:focusable="false"
+        android:padding="5dp"
+        android:text="@string/kmh_title"
+        android:textSize="14sp" />
 
 </LinearLayout>

@@ -92,14 +92,15 @@ public class FragmentCap2 extends Fragment {
                 "The next steps can be done up to 2 hours\n" +
                 "after charging stops.");
         listInstructions[5] = ("");
-        listInstructions[6] = ("Now the SoC of all the cells are being measured\n" +
-                "again. As before this requires at least 30 minutes\n" +
+        listInstructions[6] = ("To complete the measurement unplug the car and\n" +
+                "turn it on to ready.\n");
+        listInstructions[7] = ("Now the SoC of all the cells are being measured\n" +
+                "again. This may require 30 minutes\n" +
                 "at low load = amps less than 1.\n");
-        listInstructions[7] = ("To complete the measurement unplug the car and\n" +
-                "turn it on to ready. Please wait some minutes\n" +
-                "while cell values are updated.\n");
 
         StepInstructions(0);
+
+        Refresh(MainActivity.arrayOBD, 0);
     }
 
     private static void StepInstructions(final int instruction) {
@@ -152,13 +153,13 @@ public class FragmentCap2 extends Fragment {
         }
     }
 
-    static void Refresh(ArrayList<String> arrayCalc, int step) {
+    static void Refresh(ArrayList<String> arrayCap2, int step) {
         int instruction;
         if (step > 8) instruction = 8;
         else instruction = Math.max(step, 0);
-        int arrayLen = Math.min(calcView.length, arrayCalc.size());
+        int arrayLen = Math.min(calcView.length, arrayCap2.size());
         try {
-            for (int i = 0; i < arrayLen; i++) calcView[i].setText(arrayCalc.get(i));
+            for (int i = 0; i < arrayLen; i++) calcView[i].setText(arrayCap2.get(i));
         } catch (Exception e) {
             Log.e(TAG, "refreshing" + e);
         }
