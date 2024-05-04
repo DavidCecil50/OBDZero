@@ -8,10 +8,13 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -25,6 +28,7 @@ import android.os.Message;
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.Display;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -34,6 +38,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -46,23 +51,24 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Objects;
 
 import static android.graphics.Color.BLACK;
 import static android.os.Build.VERSION.SDK_INT;
 import static java.lang.Double.parseDouble;
+import static java.lang.Long.parseLong;
 import static java.lang.System.currentTimeMillis;
 
 /*
   This code is based on the BlueTerm code by pymasde.es found on GitHub and dated the 7th May 2014
 */
 public class MainActivity extends AppCompatActivity {
-
     //Set to true to add debugging code and logging.
-    private static final String TAG = "Main Activity";
-    private static final boolean DEBUG = true;
+    static final String TAG = "Main Activity";
+    static final boolean DEBUG = true;
 
-    private static final int PERMIT_NEARBY = 1;
-    private static final int PERMIT_STORAGE = 2;
+    static final int PERMIT_NEARBY = 1;
+    static final int PERMIT_STORAGE = 2;
 
     // Message types sent from the BluetoothReadService Handler
     static final int MESSAGE_STATE_CHANGE = 1;
@@ -82,12 +88,6 @@ public class MainActivity extends AppCompatActivity {
     private static String connectedDeviceName = null;
     private static String deviceMacAddress = null;
 
-    private long previousTime = 0;
-    private long stepTime = 0;
-    private long cycleTime = 0;
-    private long recordTime = 0;
-    private long bmuTime = 55000L;
-
     private final Handler handlerMonitor = new Handler();
 
     private Button btnOne;
@@ -102,30 +102,37 @@ public class MainActivity extends AppCompatActivity {
     private View lineFour;
     private View lineFive;
 
+    private TextView textCell;
+
     // Identifying the fragment in focus
-    private static final int FRAG_INFO = 1;
-    private static final int FRAG_PID = 2;
-    private static final int FRAG_CELLS = 3;
-    private static final int FRAG_OBD = 4;
-    private static final int FRAG_CALC = 5;
-    private static final int FRAG_WATTS = 6;
-    private static final int FRAG_DRV = 7;
-    private static final int FRAG_CAP1 = 8;
-    private static final int FRAG_CAP2 = 9;
-    private static final int FRAG_AH = 10;
-    private static final int FRAG_WH = 11;
-    private static final int FRAG_TEMP = 12;
-    private static final int FRAG_VOLTS = 13;
+    static final int FRAG_INFO = 1;
+    static final int FRAG_PID = 2;
+    static final int FRAG_CELLS = 3;
+    static final int FRAG_OBD = 4;
+    static final int FRAG_CALC = 5;
+    static final int FRAG_WATTS = 6;
+    static final int FRAG_DRV = 7;
+    static final int FRAG_CHARGE = 8;
+    static final int FRAG_CAP1 = 9;
+    static final int FRAG_CAP2 = 10;
+    static final int FRAG_AH = 11;
+    static final int FRAG_WH = 12;
+    static final int FRAG_TEMP = 13;
+    static final int FRAG_VOLTS = 14;
+    static final int FRAG_OPS = 15;
 
     private static int fragNo = FRAG_INFO;
 
-    private static final int clrDarkGreen = 0xFF047C14;
+    static final int clrDarkGreen = 0xFF047C14;
 
     static final String TRUE_SPEED = "speed";
     static final String PREFERRED_MARGIN = "margin";
     static final String CAR_LOAD = "load";
+    static final String CAPACITY_AH = "charge";
+    static final String CELL_CHEM = "LEV";
     static final String RANGE_UNITS = "km";
     static final String ODO_UNITS = "km";
+    static final String OCV_TYPE = "old";
     static final String RECORD_TIME = "sec";
 
     private final static String[] collectedPIDs = {
@@ -139,10 +146,10 @@ public class MainActivity extends AppCompatActivity {
             "75A 8", "75B 8"};
     // PIDs 6E1-6E4 and 762 are also collected but handled differently
 
-    private static final ArrayList<PID> allPIDs = new ArrayList<>();
+    static final ArrayList<PID> allPIDs = new ArrayList<>();
     static final PID[] listPIDs = new PID[collectedPIDs.length + 80]; // PIDs 6E1-6E4 use 48 PIDs and 762 uses 27 PIDS
 
-    private static final CellSensor[] listSensors = new CellSensor[96];
+    static final CellSensor[] listSensors = new CellSensor[96];
     static final Cell[] listCells = new Cell[96];
 
     private ArrayList<String> listStoreInfo = new ArrayList<>();
@@ -150,7 +157,8 @@ public class MainActivity extends AppCompatActivity {
 
     static final ArrayList<String> arrayOBD = new ArrayList<>();
 
-    private static File fileDir = null;
+    private static File fileFolder = null;
+    private static File appFolder = null;
     private static File fileInfo = null;
     private static File filePIDs = null;
     private static File filePIDInt = null;
@@ -158,24 +166,19 @@ public class MainActivity extends AppCompatActivity {
     private static File fileSensors = null;
     private static File fileOBD = null;
     private static File fileCalc = null;
-    private static File fileInitial = null;
-    private String strFileDir = "";
 
     private final static SimpleDateFormat fileDate = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss", Locale.US);
     private final static SimpleDateFormat dataDateDot = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS", Locale.US);
     private final static SimpleDateFormat dataDateComma = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss,SSS", Locale.US);
-    private final static SimpleDateFormat displayDate = new SimpleDateFormat("dd-MM-yyyy", Locale.US);
-    private final static SimpleDateFormat displayTime = new SimpleDateFormat("HH:mm:ss", Locale.US);
+    final static SimpleDateFormat displayDate = new SimpleDateFormat("dd-MM-yyyy", Locale.US);
+    final static SimpleDateFormat displayTime = new SimpleDateFormat("HH:mm:ss", Locale.US);
 
     private final static DecimalFormat decFix0 = new DecimalFormat("##0");
-    private final static DecimalFormat decFix1 = new DecimalFormat("##0.0");
-    private final static DecimalFormat decFix2 = new DecimalFormat("##0.00");
-    private final static DecimalFormat decFix00 = new DecimalFormat("00");
+    final static DecimalFormat decFix1 = new DecimalFormat("##0.0");
+    final static DecimalFormat decFix2 = new DecimalFormat("##0.00");
 
     private Dialog dialogAbout;
 
-    private boolean okFileDir = false;
-    private boolean okFileInitial = false;
     private boolean runReset = false;
     private boolean isReset = false;
     private boolean runRestart = false;
@@ -185,225 +188,216 @@ public class MainActivity extends AppCompatActivity {
     private boolean iniRecording = false;
     private boolean runRecording = false;
     private boolean cells88 = true;
-    private boolean okData = false;
     private boolean errorAC = false;
+    private boolean isSleeping = false;
+    private boolean iniShown = false;
+    private boolean introShn = false;
 
     static boolean cellsData = false;
     static boolean milesPerkWh = false;
     static boolean miles = false;
     static boolean mph = false;
-    static final double KmPerMile = 1.609344;
+    static boolean checkRRMiles = false;
+    static boolean checkOdoMiles = false;
 
-    static boolean checkRangeUnits = false;
-    static boolean checkOdoUnits = false;
+    static int stepCap1 = 0;
+    static int stepCap2 = 0;
+    static int m_CellsNo = 88;
 
-    static int m_CapStep = 0;
-    static int m_CapCount = 0;
     private int m_newPIDs = 0;
-    private int m_CellsNo = 88;
-    private int iniFileNo = 0;
     private int monitor = 0;
     private int menuTabs = 0;
 
-    private static Date stepDateTime = new Date();
+    private long previousTime = 0;
+    private long stepTime = 0;
+    private long cycleTime = 0;
+    private long recordTime = 0;
+    private long bmuTime = 20000L;
+    static long i_Time = 0;
+
+    static final double KmPerMile = 1.609344;
+
+    static Date stepDateTime = new Date();
 
     private static long p_Time = currentTimeMillis();
-    private static double d_Second = 1.0;
     private static double d_Hour = 0.0056;
 
-    private static final double b_Vavg = 320;
-    private static final double s_Whkm = 110;
+    static double d_Second = 1.0;
 
     private final String[] strVIN = {"V", "I", "N"};
 
     static final OBD i_Spd100 = new OBD(95, "km/h", 0);
     static final OBD i_Margin = new OBD(10, "km", 0);
     static final OBD i_Load = new OBD(150, "kg", 0);
-    static final OBD i_RecordTime = new OBD(5, "sec", 0);
+    static final OBD i_Record = new OBD(5, "sec", 0);
+    static final OBD i_Capacity = new OBD(90, "Ah", 1);
+    static final OBD i_RemAh = new OBD(0, "Ah", 1);
+
+    static String i_Chem = "NMC";
     static String i_RangeUnits = "km";
     static String i_OdoUnits = "km";
+    static String i_OCV = "old";
 
-    private static final OBD c_Mass = new OBD(1120 + i_Load.dbl, "kg", 0);
-    private static final OBD c_Roll = new OBD(9.89 * 0.018 * c_Mass.dbl, "", 2);
-    private static final OBD c_Drag = new OBD(0.8 * (1.2978 - 0.0046 * 15) / 2.0, "", 2);
-    private static final OBD c_CapAh = new OBD(0, "Ah", 1);
-    private static final OBD c_Amps = new OBD(0, "A", 2);
-    private static final OBD c_AmpsCal = new OBD(0, "A", 2);
-    private static final OBD c_OdoShown = new OBD(0, "km", 0);
-    private static final OBD c_Odo = new OBD(0, "km", 0);
-    private static final OBD p_Odo = new OBD(0, "km", 0);
-    private static final OBD c_SpdShown = new OBD(0, "km/h", 0);
-    private static final OBD c_SpdAvgRR = new OBD(20, "km/h", 1);
-    private static final OBD c_Speed0 = new OBD(0, "km/h", 2);
-    private static final OBD c_Speed1 = new OBD(0, "km/h", 2);
-    private static final OBD c_Speed2 = new OBD(0, "km/h", 2);
-    private static final OBD c_Speed3 = new OBD(0, "km/h", 2);
-    private static final OBD c_Speed4 = new OBD(0, "km/h", 2);
-    private static final OBD p_Speed = new OBD(0, "km/h", 2);
-    private static final OBD c_Acceleration = new OBD(0, "m/s2", 3);
-    private static final OBD c_Pedal = new OBD(0, "%", 2);
-    private static final OBD c_Steering = new OBD(0, "deg", 0);
-    private static final OBD c_Rotation = new OBD(0, "%", 2);
-    private static final OBD c_BrakeOn = new OBD(0, "", 0);
-    private static final OBD c_Brake = new OBD(0, "", 0);
-    private static final OBD c_RestRange = new OBD(0, "km", 0);
-    private static final OBD c_RRshown = new OBD(c_RestRange.dbl, "km", 0);
-    private static final OBD c_RR = new OBD(c_RestRange.dbl, "km", 1);
-    private static final OBD c_RRtest = new OBD(c_RestRange.dbl, "km", 1);
-    private static final OBD c_AhRem = new OBD(c_CapAh.dbl, "Ah", 2);
-    private static final OBD d_AhCal = new OBD(0, "Ah", 2);
-    private static final OBD c_kmTest = new OBD(5, "km", 0);
-    private static final OBD c_Whkm = new OBD(s_Whkm, "Wh/km", 0);
-    private static final OBD p_SoC = new OBD(0, "%", 1);
-    private static final OBD c_SoC1 = new OBD(0, "%", 1);
-    private static final OBD c_SoC2 = new OBD(0, "%", 1);
-    private static final OBD c_RPM = new OBD(0, "rpm", 0);
-    private static final OBD c_MotorA = new OBD(0, "A", 2);
-    private static final OBD c_RegA = new OBD(0, "A", 1);
-    private static final OBD c_RegW = new OBD(0, "W", 0);
-    private static final OBD c_QuickCharge = new OBD(0, "", 0);
-    private static final OBD c_QCprocent = new OBD(0, "%", 0);
-    private static final OBD c_QCAmps = new OBD(0, "A", 0);
-    private static final OBD c_ChargeVDC = new OBD(0, "V", 0);
-    private static final OBD c_ChargeVAC = new OBD(0, "V", 0);
-    private static final OBD c_ChargeADC = new OBD(0, "A", 2);
-    private static final OBD c_ChargeTemp1 = new OBD(0, "oC", 0);
-    private static final OBD c_ChargeTemp2 = new OBD(0, "oC", 0);
-    private static final OBD c_ChargeAAC = new OBD(0, "A", 2);
-    private static final OBD c_KeyOn = new OBD(0, "", 0);
-    private static final OBD c_AirSensor = new OBD(0, "oC", 0);
-    private static final OBD c_MotorTemp0 = new OBD(0, "oC", 0);
-    private static final OBD c_MotorTemp1 = new OBD(0, "oC", 0);
-    private static final OBD c_MotorTemp2 = new OBD(0, "oC", 0);
-    private static final OBD c_MotorTemp3 = new OBD(0, "oC", 0);
-    private static final OBD c_Model = new OBD(0, "", 0);
-    private static final OBD c_Gear = new OBD(0, "", 0);
-    private static final OBD c_Gear285 = new OBD(0, "", 0);
+    static final OBD c_Mass = new OBD(0, "kg", 0);
+    static final OBD c_Roll = new OBD(0, "", 2);
+    static final OBD c_Drag = new OBD(0, "", 2);
+    static final OBD p_Amps = new OBD(0, "A", 2);
+    static final OBD c_OdoShown = new OBD(0, "km", 0);
+    static final OBD p_Odo = new OBD(0, "km", 0);
+    static final OBD c_SpdShown = new OBD(0, "km/h", 0);
+    static final OBD c_SpdAvgRR = new OBD(0, "km/h", 1);
+    static final OBD c_Speed0 = new OBD(0, "km/h", 2);
+    static final OBD c_Speed1 = new OBD(0, "km/h", 2);
+    static final OBD c_Speed2 = new OBD(0, "km/h", 2);
+    static final OBD c_Speed3 = new OBD(0, "km/h", 2);
+    static final OBD c_Speed4 = new OBD(0, "km/h", 2);
+    static final OBD p_Speed = new OBD(0, "km/h", 2);
+    static final OBD c_Acc = new OBD(0, "m/s2", 3);
+    static final OBD c_Pedal = new OBD(0, "%", 2);
+    static final OBD c_Steering = new OBD(0, "deg", 0);
+    static final OBD c_Rotation = new OBD(0, "%", 2);
+    static final OBD c_BrakeOn = new OBD(0, "", 0);
+    static final OBD c_Brake = new OBD(0, "", 0);
+    static final OBD c_RRshown = new OBD(0, "km", 0);
+    static final OBD c_RRtest = new OBD(0, "km", 1);
+    static final OBD c_kmTest = new OBD(0, "km", 1);
+    static final OBD c_RPM = new OBD(0, "rpm", 0);
+    static final OBD c_MotorA = new OBD(0, "A", 2);
+    static final OBD c_RegA = new OBD(0, "A", 2);
+    static final OBD c_RegW = new OBD(0, "W", 0);
+    static final OBD c_QuickCharge = new OBD(0, "", 0);
+    static final OBD c_QCprocent = new OBD(0, "%", 0);
+    static final OBD c_QCAmps = new OBD(0, "A", 1);
+    static final OBD c_ChargeVDC = new OBD(0, "V", 0);
+    static final OBD c_ChargeVAC = new OBD(0, "V", 0);
+    static final OBD c_ChargeADC = new OBD(0, "A", 2);
+    static final OBD c_ChargeTemp1 = new OBD(0, "oC", 0);
+    static final OBD c_ChargeTemp2 = new OBD(0, "oC", 0);
+    static final OBD c_ChargeAAC = new OBD(0, "A", 2);
+    static final OBD c_KeyOn = new OBD(0, "", 0);
+    static final OBD c_AirSensor = new OBD(0, "oC", 0);
+    static final OBD c_MotorTemp0 = new OBD(0, "oC", 0);
+    static final OBD c_MotorTemp1 = new OBD(0, "oC", 0);
+    static final OBD c_MotorTemp2 = new OBD(0, "oC", 0);
+    static final OBD c_MotorTemp3 = new OBD(0, "oC", 0);
+    static final OBD c_Model = new OBD(0, "", 0);
+    static final OBD c_Gear = new OBD(0, "", 0);
+    static final OBD c_Gear285 = new OBD(0, "", 0);
+    static final OBD c_SpdShnAvg = new OBD(0, "km/h", 1);
 
-    static final OBD c_Speed0Avg = new OBD(20, "km/h", 1);
-    static final OBD c_SpdShnAvg = new OBD(20, "km/h", 1);
-    static final OBD c_CapWh = new OBD(c_CapAh.dbl * b_Vavg, "Ah", 0);
-    static final OBD c_WhRem = new OBD(c_CapWh.dbl, "Wh", 0);
-    static final OBD c_WhRem10 = new OBD(c_CapWh.dbl, "Wh", 0);
-    static final OBD c_Margin = new OBD(c_RestRange.dbl, "km", 0);
+    static final OBD c_Odo = new OBD(0, "km", 0);
+    static final OBD c_AmpsCal = new OBD(0, "A", 2);
+    static final OBD c_WattsCal = new OBD(0, "W", 0);
+    static final OBD c_Speed0Avg = new OBD(0, "km/h", 1);
+    static final OBD t_Margin = new OBD(0, "km", 0);
 
-    private static final OBD b_CapAhCheck = new OBD(c_CapAh.dbl, "Ah", 1);
-    private static final OBD b_AhRem = new OBD(c_CapAh.dbl, "Ah", 2);
-    private static final OBD b_Wavg = new OBD(2200, "W", 0);
-    private static final OBD b_WavgRR = new OBD(2200, "W", 0);
-    private static final OBD b_WMovAvg = new OBD(2200, "W", 0);
-    private static final OBD b_Whkm = new OBD(s_Whkm, "Wh/km", 0);
-    private static final OBD b_Amps = new OBD(0, "A", 2);
-    private static final OBD p_AmpsCal = new OBD(0, "A", 2);
-    private static final OBD b_RR = new OBD(c_RestRange.dbl, "km", 1);
-    private static final OBD b_CellVsum = new OBD(0, "V", 3);
-    private static final OBD b_CellVavg = new OBD(0, "V", 3);
-    private static final OBD b_BatVavg = new OBD(0, "V", 2);
-    private static final OBD b_BatSoCmax = new OBD(0, "%", 2);
-    private static final OBD b_BatSoCavg = new OBD(0, "%", 2);
-    private static final OBD b_BatSoCmin = new OBD(0, "%", 2);
-    private static final OBD p_BatSoCmax = new OBD(0, "%", 2);
-    private static final OBD p_BatSoCavg = new OBD(0, "%", 2);
-    private static final OBD p_BatSoCmin = new OBD(0, "%", 2);
+    static final OBD d_AhCal = new OBD(0, "Ah", 2);
 
-    static final OBD b_WhRem = new OBD(c_CapWh.dbl, "Wh", 0);
+    static final OBD b_Amps68 = new OBD(0, "A", 2);
+
+    static final OBD b_SoC1 = new OBD(-1, "%", 1);
+    static final OBD b_SoC2 = new OBD(-1, "%", 1);
+    static final OBD b_Wavg = new OBD(0, "W", 0);
+    static final OBD b_WavgRR = new OBD(0, "W", 0);
+    static final OBD b_Whkm = new OBD(0, "Wh/km", 0);
     static final OBD b_BatTmax = new OBD(0, "oC", 0);
     static final OBD b_BatTmin = new OBD(0, "oC", 0);
     static final OBD b_Temp = new OBD(0, "oC", 1);
+    static final OBD b_BatVavg = new OBD(0, "V", 2);
     static final OBD b_BatVmax = new OBD(0, "V", 2);
     static final OBD b_BatVmin = new OBD(0, "V", 2);
     static final OBD b_Volts = new OBD(0, "V", 1);
-    static final OBD b_BMURemAh = new OBD(c_CapAh.dbl, "Ah", 1);
-    static final OBD b_BMUCapAh = new OBD(c_CapAh.dbl, "Ah", 1);
-    static final OBD b_BMUSoC = new OBD(0, "%", 1);
-    static final OBD b_Watts = new OBD(0, "W", 0);
-    static final OBD b_WhkmAux = new OBD(s_Whkm, "Wh/km", 0);
-    static final OBD b_WAvgAux = new OBD(2200, "W", 0);
+    static final OBD b_CapEst = new OBD(0, "Ah", 1);
 
-    private static final Cell b_CellVmin = new Cell();
-    private static final Cell b_CellVmax = new Cell();
+    static final Ah c_Ah = new Ah(0, 0, 0, -1);
+    static final Ah b_Ah = new Ah(0, 0, 0, -1);
+    static final Ah m_Ah = new Ah(0, 0, 0, -1);
+    static final Ah t_Ah = new Ah(0, 0, 0, -1);
+    static final Ah bmu_Ah = new Ah(0, 0, 0, -1);
+    static final Ah nmc_Ah = new Ah(0, 0, 0, -1);
 
-    private static final OBD m_Error = new OBD(6, "kg/s", 1);
-    private static final OBD e_N = new OBD(m_Error.dbl * c_Speed0Avg.dbl / 3.6, "N", 0);
-    private static final OBD e_Watts = new OBD(e_N.dbl * c_Speed0Avg.dbl / 3.6, "W", 0);
+    static boolean isCharging = false;
+    static final OBD bmu_CapAh0 = new OBD(0, "Ah", 1);
+    static final OBD bmu_RemAh0 = new OBD(0, "Ah", 1);
+    static final OBD b_CapAh0 = new OBD(0, "Ah", 1);
+    static final OBD b_RemAh0 = new OBD(0, "Ah", 1);
+    static final OBD b_Volts0 = new OBD(0, "V", 1);
+    static final OBD b_SoC10 = new OBD(0, "%", 1);
+    static final OBD bmu_CapAh1 = new OBD(0, "Ah", 1);
+    static final OBD bmu_RemAh1 = new OBD(0, "Ah", 1);
+    static final OBD b_CapAh1 = new OBD(0, "Ah", 1);
+    static final OBD b_RemAh1 = new OBD(0, "Ah", 1);
+    static final OBD b_Volts1 = new OBD(0, "V", 1);
+    static final OBD b_SoC11 = new OBD(0, "%", 1);
+
+    static boolean pause1 = false;
+    static final OBD p1_Time = new OBD(0, "min", 1);
+    static final OBD p1_Volts = new OBD(0, "V", 0);
+    static final OBD p1_Ah = new OBD(0, "Ah", 1);
+    static final OBD p1_SoC = new OBD(0, "%", 1);
+    static final OBD p2_Time = new OBD(0, "min", 1);
+    static final OBD p2_Volts = new OBD(0, "V", 0);
+    static final OBD p2_Ah = new OBD(0, "Ah", 1);
+    static final OBD p2_SoC = new OBD(0, "%", 1);
+    static final OBD p12_CapAh = new OBD(0, "Ah", 1);
+
+    static boolean chargeFinished = false;
+
+    static final Cell b_Cellmin = new Cell();
+    static final Cell b_Cellavg = new Cell();
+    static final Cell b_Cellmax = new Cell();
+
+    static Cell m_CAh2min = new Cell();
+    static Cell m_CAh2avg = new Cell();
+    static Cell m_CAh2max = new Cell();
+
+    static final OBD m_Error = new OBD(0, "kg/s", 1);
+    static final OBD e_N = new OBD(0, "N", 0);
+    static final OBD e_Watts = new OBD(0, "W", 0);
+
+    static final OBD m_AccW = new OBD(0, "W", 1);
+    static final OBD m_Amps = new OBD(0, "A", 2);
+    static final OBD m_Odo = new OBD(0, "km", 1);
+    static final OBD m_kmTest = new OBD(0, "km", 1);
+    static final OBD m_Wind = new OBD(0, "m/s", 1);
+    static final OBD mp_Amps = new OBD(0, "A", 1);
+    static final OBD m_Watts = new OBD(0, "W", 0);
+    static final OBD m_Whkm = new OBD(0, "Wh/km", 0);
+    static final OBD m_Wavg = new OBD(0, "W", 0);
+    static final OBD m_WavgRR = new OBD(0, "W", 0);
+    static final OBD m_CapTemp = new OBD(0, "oC", 1);
+    static final OBD m_SoCavg = new OBD(0, "oC", 1);
 
     static final OBD m_km = new OBD(0, "km", 1);
     static final OBD m_AuxW = new OBD(0, "W", 0);
+    static final OBD m_OCtimer = new OBD(0, "mins", 1);
 
-    private static final OBD m_BatSummax = new OBD(0, "%", 2);
-    private static final OBD m_BatSumavg = new OBD(0, "%", 2);
-    private static final OBD m_BatSummin = new OBD(0, "%", 2);
-    private static final OBD m_BatAh1max = new OBD(0, "Ah", 2);
-    private static final OBD m_BatAh1min = new OBD(0, "Ah", 2);
-    private static final OBD m_BatAh1avg = new OBD(0, "Ah", 2);
-    private static final OBD m_BatAh2max = new OBD(0, "Ah", 2);
-    private static final OBD m_BatAh2min = new OBD(0, "Ah", 2);
-    private static final OBD m_BatAh2avg = new OBD(0, "Ah", 2);
-    private static final OBD m_AccW = new OBD(0, "W", 1);
-    private static final OBD m_AccWavg = new OBD(0, "W", 1);
-    private static final OBD m_AmpsCal = new OBD(c_AmpsCal.dbl, "A", 2);
-    private static final OBD m_AmpsAvg = new OBD(c_AmpsCal.dbl, "A", 2);
-    private static final OBD m_Odo = new OBD(c_Odo.dbl, "km", 1);
-    private static final OBD m_kmTest = new OBD(5, "km", 1);
-    private static final OBD m_Wind = new OBD(0, "m/s", 1);
-    private static final OBD mp_AmpsCal = new OBD(0, "A", 1);
-    private static final OBD m_WhRem = new OBD(c_CapWh.dbl, "Wh", 0);
-    private static final OBD m_AhRem = new OBD(c_CapAh.dbl, "Ah", 2);
-    private static final OBD m_Watts = new OBD(0, "W", 0);
-    private static final OBD m_Whkm = new OBD(s_Whkm, "Wh/km", 0);
-    private static final OBD m_Wavg = new OBD(2200, "W", 0);
-    private static final OBD m_WavgRR = new OBD(2200, "W", 0);
-    private static final OBD m_WAvgAux = new OBD(2200, "W", 0);
-    private static final OBD m_WhkmAux = new OBD(s_Whkm, "Wh/km", 0);
-    private static final OBD m_WMovAvg = new OBD(500, "W", 0);
-    private static final OBD m_RR = new OBD(c_RestRange.dbl, "km", 1);
-    private static final OBD m_SoCavg = new OBD(0, "%", 2);
-    private static final OBD m_CapAhsum = new OBD(0, "Ah", 2);
-    private static final OBD m_CapSoCUsed = new OBD(0, "%", 2);
-    private static final OBD m_CapAhUsed = new OBD(0, "Ah", 2);
-    private static final OBD m_Cap1Ahmax = new OBD(0, "Ah", 2);
-    private static final OBD m_Cap1Ahavg = new OBD(0, "Ah", 2);
-    private static final OBD m_Cap1AhavgDisplay = new OBD(0, "Ah", 2);
-    private static final OBD m_Cap1Ahmin = new OBD(0, "Ah", 2);
-    private static final OBD m_Cap2SoCsum = new OBD(0, "%", 2);
-    private static final OBD m_Cap2Ahmax = new OBD(0, "Ah", 2);
-    private static final OBD m_Cap2Ahavg = new OBD(0, "Ah", 2);
-    private static final OBD m_Cap2AhavgDisplay = new OBD(0, "Ah", 2);
-    private static final OBD m_Cap2Ahmin = new OBD(0, "Ah", 2);
-    private static final OBD m_OCtimer = new OBD(0, "mins", 2);
-    private static final OBD m_CapTemp = new OBD(0, "oC", 1);
-
-    private static final Cell m_CellAhmax = new Cell();
-    private static final Cell m_CellAhmin = new Cell();
-
-    private static final OBD t_W = new OBD(15000, "W", 0);
-    private static final OBD t_Whkm = new OBD(s_Whkm, "Wh/km", 0);
-    private static final OBD t_RR = new OBD(i_Margin.dbl, "km", 1);
-
+    static final OBD t_W = new OBD(0, "W", 0);
     static final OBD t_km = new OBD(0, "km", 1);
-    static final OBD t_Speed = new OBD(30, "km/h", 1);
-    static final OBD t_WhReq = new OBD(c_CapWh.dbl, "Wh", 0);
+    static final OBD t_reqkm = new OBD(0, "km", 1);
+    static final OBD t_Speed = new OBD(0, "km/h", 1);
+    static final OBD t_Slope = new OBD(0, "", 1);
 
-    private static final OBD h_Amps = new OBD(0, "A", 1);
-    private static final OBD h_Watts = new OBD(0, "W", 0);
-    private static final OBD ac_Amps = new OBD(0, "A", 2);
-    private static final OBD ac_Watts = new OBD(0, "W", 0);
-    private static final OBD h_Level = new OBD(7, "", 0);
-    private static final OBD a_Fan = new OBD(0, "", 0);
-    private static final OBD a_Dirc = new OBD(4, "", 0);
-    private static final OBD ac_On = new OBD(0, "", 0);
-    private static final OBD a_Max = new OBD(0, "", 0);
-    private static final OBD a_Reci = new OBD(0, "", 0);
-    private static final OBD c_12vAmps = new OBD(0, "A", 2);
-    private static final OBD c_12vWatts = new OBD(0, "W", 0);
+    static final OBD h_Amps = new OBD(0, "A", 1);
+    static final OBD h_Watts = new OBD(0, "W", 0);
+    static final OBD ac_Amps = new OBD(0, "A", 2);
+    static final OBD ac_Watts = new OBD(0, "W", 0);
+    static final OBD h_Level = new OBD(7, "", 0);
+    static final OBD a_Fan = new OBD(0, "", 0);
+    static final OBD a_Dirc = new OBD(4, "", 0);
+    static final OBD ac_On = new OBD(0, "", 0);
+    static final OBD a_Max = new OBD(0, "", 0);
+    static final OBD a_Reci = new OBD(0, "", 0);
+    static final OBD c_12vAmps = new OBD(0, "A", 2);
+    static final OBD c_12vWatts = new OBD(0, "W", 0);
 
-    private static final OBD l_Park = new OBD(0, "", 0);
-    private static final OBD l_Drive = new OBD(0, "", 0);
-    private static final OBD l_FogFront = new OBD(0, "", 0);
-    private static final OBD l_FogRear = new OBD(0, "", 0);
-    private static final OBD l_High = new OBD(0, "", 0);
-    private static final OBD w_DeRear = new OBD(0, "", 0);
-    private static final OBD w_WiperF = new OBD(0, "", 0);
+    static final OBD l_Park = new OBD(0, "", 0);
+    static final OBD l_Drive = new OBD(0, "", 0);
+    static final OBD l_FogFront = new OBD(0, "", 0);
+    static final OBD l_FogRear = new OBD(0, "", 0);
+    static final OBD l_High = new OBD(0, "", 0);
+    static final OBD w_DeRear = new OBD(0, "", 0);
+    static final OBD w_WiperF = new OBD(0, "", 0);
 
     private static MenuItem itemMenuConnect;
     private static MenuItem itemMenuStartStopData;
@@ -423,29 +417,19 @@ public class MainActivity extends AppCompatActivity {
     private final SpannableString menu_stop_recording = new SpannableString("Stop recording");
     private final SpannableString menu_about = new SpannableString("About");
 
-    private static final int MENU_INT = 2;
-    private static final int MENU_CON = 3;
-    private static final int MENU_RST = 4;
-    private static final int MENU_ALL = 5;
-    private static final int MENU_CLT = 6;
-    private static final int MENU_CMP = 7;
-    private static final int MENU_REC = 8;
-    private static final int MENU_ABT = 9;
-
-    private static final int idInitial = R.id.initial_values;
-    private static final int idConnect = R.id.connect;
-    private static final int idReset = R.id.reset;
-    private static final int idStartAll = R.id.start_all;
-    private static final int idData = R.id.start_stop_data;
-    private static final int idComputing = R.id.start_stop_computing;
-    private static final int idRecording = R.id.start_stop_recording;
-    private static final int idAbout = R.id.menu_about;
-    private static final int idTabulate = R.id.icon_tabulate;
-    private static final int idRestart = R.id.icon_restart;
+    static final int MENU_INT = 2;
+    static final int MENU_CON = 3;
+    static final int MENU_RST = 4;
+    static final int MENU_ALL = 5;
+    static final int MENU_CLT = 6;
+    static final int MENU_CMP = 7;
+    static final int MENU_REC = 8;
+    static final int MENU_ABT = 9;
 
     private ActivityResultLauncher<Intent> DeviceListLauncher;
     private ActivityResultLauncher<Intent> InitialValuesLauncher;
 
+    @SuppressLint("SetTextI18n")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -476,58 +460,22 @@ public class MainActivity extends AppCompatActivity {
                 listCells[i * 8 + j].cell = j + 1;
                 listCells[i * 8 + j].volts = 0;
                 listCells[i * 8 + j].temperature = -50;
-                listCells[i * 8 + j].SoC = 0;
+                listCells[i * 8 + j].SoC = -1;
                 listSensors[i * 8 + j].module = i + 1;
                 listSensors[i * 8 + j].sensor = j + 1;
                 listSensors[i * 8 + j].temperature = -50;
             }
         }
 
-        m_CellAhmin.module = 0;
-        m_CellAhmin.cell = 0;
-        m_CellAhmin.volts = 3.7;
-        m_CellAhmin.temperature = -50;
-        m_CellAhmin.SoC = 0;
-        m_CellAhmin.SoCsum = 0;
-        m_CellAhmin.capAh1 = 0;
-        m_CellAhmin.capAh2 = 0;
-        m_CellAhmin.isFound = true;
-        m_CellAhmin.isNew = false;
 
-        m_CellAhmax.module = 0;
-        m_CellAhmax.cell = 0;
-        m_CellAhmax.volts = 3.7;
-        m_CellAhmax.temperature = -50;
-        m_CellAhmax.SoC = 0;
-        m_CellAhmax.SoCsum = 0;
-        m_CellAhmax.capAh1 = 0;
-        m_CellAhmax.capAh2 = 0;
-        m_CellAhmax.isFound = true;
-        m_CellAhmax.isNew = false;
+        b_Cellmin.isFound = true;
+        b_Cellmin.isNew = false;
 
-        b_CellVmin.module = 0;
-        b_CellVmin.cell = 0;
-        b_CellVmin.volts = 3.7;
-        b_CellVmin.temperature = -50;
-        b_CellVmin.SoC = 0;
-        b_CellVmin.SoCsum = 0;
-        b_CellVmin.capAh1 = 0;
-        b_CellVmin.capAh2 = 0;
-        b_CellVmin.isFound = true;
-        b_CellVmin.isNew = false;
+        b_Cellavg.isFound = true;
+        b_Cellavg.isNew = false;
 
-        b_CellVmax.module = 0;
-        b_CellVmax.cell = 0;
-        b_CellVmax.volts = 3.7;
-        b_CellVmax.temperature = -50;
-        b_CellVmax.SoC = 0;
-        b_CellVmax.SoCsum = 0;
-        b_CellVmax.capAh1 = 0;
-        b_CellVmax.capAh2 = 0;
-        b_CellVmax.isFound = true;
-        b_CellVmax.isNew = false;
-
-        m_SoCavg.dbl = 0;
+        b_Cellmax.isFound = true;
+        b_Cellmax.isNew = false;
 
         btnOne = findViewById(R.id.button1);
         btnTwo = findViewById(R.id.button2);
@@ -565,6 +513,8 @@ public class MainActivity extends AppCompatActivity {
         lineFour = findViewById(R.id.line4);
         lineFive = findViewById(R.id.line5);
 
+        textCell = findViewById(R.id.text_celltype);
+
         Display display = getWindowManager().getDefaultDisplay();
         Point size = new Point();
         display.getSize(size);
@@ -582,7 +532,7 @@ public class MainActivity extends AppCompatActivity {
                                 try {
                                     connectedDevice = adapterBluetooth.getRemoteDevice(deviceMacAddress);
                                     serviceSerial.connect(connectedDevice);
-                                    if (okFileInitial) storeInitialValues();
+                                    storeInitialValues();
                                 } catch (Exception e) {
                                     if (DEBUG) Log.i(TAG, "DeviceListLauncher " + e);
                                     updateInfo("app:Connection to the dongle");
@@ -621,7 +571,6 @@ public class MainActivity extends AppCompatActivity {
                                     updateInfo("app:Initial value error range remaining at station");
                                 }
                             value = iniValues.getStringExtra(CAR_LOAD);
-
                             if (value != null)
                                 try {
                                     i_Load.dbl = parseDouble(value.replace(',', '.'));
@@ -629,49 +578,62 @@ public class MainActivity extends AppCompatActivity {
                                     if (DEBUG) Log.i(TAG, "NumberFormatException " + e);
                                     updateInfo("app:Initial value error load");
                                 }
+                            value = iniValues.getStringExtra(CAPACITY_AH);
+                            if (value != null)
+                                try {
+                                    i_Capacity.dbl = parseDouble(value.replace(',', '.'));
+                                } catch (NumberFormatException e) {
+                                    if (DEBUG) Log.i(TAG, "NumberFormatException " + e);
+                                    updateInfo("app:Initial value error capacity");
+                                }
                             value = iniValues.getStringExtra(RECORD_TIME);
                             if (value != null)
                                 try {
-                                    i_RecordTime.dbl = parseDouble(value.replace(',', '.'));
+                                    i_Record.dbl = parseDouble(value.replace(',', '.'));
                                 } catch (NumberFormatException e) {
                                     if (DEBUG) Log.i(TAG, "NumberFormatException " + e);
                                     updateInfo("app:Initial value error record sec.");
                                 }
-                            if (i_RecordTime.dbl > 60) i_RecordTime.dbl = 60;
-                            else if (i_RecordTime.dbl < 0) i_RecordTime.dbl = 0;
+                            if (i_Record.dbl > 60) i_Record.dbl = 60;
+                            else if (i_Record.dbl < 0) i_Record.dbl = 0;
+
+                            value = iniValues.getStringExtra(CELL_CHEM);
+                            if (value != null) i_Chem = value;
                             value = iniValues.getStringExtra(RANGE_UNITS);
                             if (value != null) i_RangeUnits = value;
                             value = iniValues.getStringExtra(ODO_UNITS);
                             if (value != null) i_OdoUnits = value;
-                            updateInfo("app:New initial values...");
-                            showInitialValues();
-                            if (okFileInitial) storeInitialValues();
+                            value = iniValues.getStringExtra(OCV_TYPE);
+                            if (value != null) i_OCV = value;
+                            storeInitialValues();
+                            iniShown = false;
+                            showInitialValues("New initial values...");
                         }
                     }
                 });
 
         fragNo = 0;
         selectOne();
-
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void onStart() {
         super.onStart();
         if (DEBUG) Log.i(TAG, "--- ON START ---");
-        listInfo.clear();
-        updateInfo("app:Download a user manual at:");
-        updateInfo("app: OBDZero.dk");
 
-        int targetSdkVersion = getApplicationInfo().targetSdkVersion;
-        if (SDK_INT > 30 && targetSdkVersion > 30) {
+        if (SDK_INT > 30) {
             if (ContextCompat.checkSelfPermission(this,
                     Manifest.permission.BLUETOOTH_CONNECT)
                     == PackageManager.PERMISSION_GRANTED) {
                 serviceSerial = new BluetoothSerialService(handlerBT);
-                adapterBluetooth = BluetoothAdapter.getDefaultAdapter();
-                adapterBluetooth.enable();
+                BluetoothManager managerBluetooth = (BluetoothManager) this.getSystemService(Context.BLUETOOTH_SERVICE);
+                if (managerBluetooth != null) {
+                    adapterBluetooth = managerBluetooth.getAdapter();
+                    adapterBluetooth.enable();
+                } else {
+                    updateInfo("app:Unknown Bluetooth error");
+                    updateInfo("app:Check Bluetooth setting");
+                }
                 checkStorePermission();
             } else {
                 updateInfo("app:OBDZero needs nearby device");
@@ -699,6 +661,31 @@ public class MainActivity extends AppCompatActivity {
         updateFrag(FRAG_INFO);
     }
 
+    private void checkStorePermission() {
+        if (SDK_INT < 30) {
+            if (ContextCompat.checkSelfPermission(this,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    != PackageManager.PERMISSION_GRANTED) {
+                updateInfo("app:OBDZero needs this permission");
+                updateInfo("app:to store data and initial values.");
+                updateFrag(FRAG_INFO);
+                // Permission is not granted
+                // No explanation needed; request the permission
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                        PERMIT_STORAGE);
+                // request Code PERMIT_STORAGE is an app-defined int constant.
+                // The callback method, onRequestPermissionsResult,
+                // gets the result of the request.
+
+            } else {
+                createFileFolders();
+            }
+        } else {
+            createFileFolders();
+        }
+    }
+
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -723,7 +710,7 @@ public class MainActivity extends AppCompatActivity {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    createFileDirectory();
+                    createFileFolders();
                 } else {
                     updateInfo("app:OBDZero does not have storage");
                     updateInfo("app:permission so stored initial");
@@ -736,26 +723,6 @@ public class MainActivity extends AppCompatActivity {
                     finishOnStart();
                 }
                 break;
-        }
-    }
-
-    private void checkStorePermission() {
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED) {
-            updateInfo("app:OBDZero needs this permission");
-            updateInfo("app:to store data and initial values.");
-            updateFrag(FRAG_INFO);
-            // Permission is not granted
-            // No explanation needed; request the permission
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                    PERMIT_STORAGE);
-            // request Code PERMIT_STORAGE is an app-defined int constant.
-            // The callback method, onRequestPermissionsResult,
-            // gets the result of the request.
-        } else {
-            createFileDirectory();
         }
     }
 
@@ -772,6 +739,7 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
         if (DEBUG) Log.i(TAG, "--- ON PAUSE ---");
         handlerMonitor.removeCallbacks(monitorOBD);
+        storeInitialValues();
         runRestart = false;
         if (runComputing || iniComputing) stopComputing();
         if (runCollector) stopData();
@@ -779,6 +747,7 @@ public class MainActivity extends AppCompatActivity {
             stopConnection();
         if (runRecording) StoreInfo();
         if (iniRecording || runRecording) stopRecording();
+        exposeFiles();
     }
 
     @Override
@@ -840,102 +809,104 @@ public class MainActivity extends AppCompatActivity {
         itemMenuStartStopComputing.setTitle(menu_start_computing);
         itemMenuStartStopRecording.setTitle(menu_start_recording);
         itemMenuAbout.setTitle(menu_about);
-
         return true;
     }
 
+    @SuppressLint("SetTextI18n")
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         runRestart = false;
-        switch (item.getItemId()) {
-            case idInitial:
-                doInitialValues();
-                return true;
-            case idConnect:
-                toggleConnect();
-                return true;
-            case idReset:
-                doReset();
-                return true;
-            case idStartAll:
-                if (!runCollector) startData();
-                if (!iniComputing && !runComputing) startComputing();
-                if (!iniRecording && !runRecording) startRecording();
-                return true;
-            case idData:
-                toggleData();
-                return true;
-            case idComputing:
-                toggleComputing();
-                return true;
-            case idRecording:
-                toggleRecording();
-                return true;
-            case idAbout:
-                showAboutDialog();
-                return true;
-            case idTabulate:
-                menuTabs++;
-                if (menuTabs > 2) menuTabs = 0;
-                switch (menuTabs) {
-                    case 0:
-                        btnOne.setText("Info");
-                        btnTwo.setText("Wh");
-                        btnThree.setText("Ah");
-                        btnFour.setText("Watts");
-                        btnFive.setText("Drive");
-                        break;
-                    case 1:
-                        btnOne.setText("Info");
-                        btnTwo.setText("OBD");
-                        btnThree.setText("Cells");
-                        btnFour.setText("Volts");
-                        btnFive.setText("oC");
-                        break;
-                    case 2:
-                        btnOne.setText("Info");
-                        btnTwo.setText("PIDs");
-                        btnThree.setText("Calc");
-                        btnFour.setText("Cap1");
-                        btnFive.setText("Cap2");
-                }
-                return true;
-            case idRestart:
-                doRestart();
-                return true;
-            default:
-                return false;
+        int itemId = item.getItemId();
+        if (itemId == R.id.initial_values) {
+            doInitialValues();
+            return true;
+        } else if (itemId == R.id.connect) {
+            toggleConnect();
+            return true;
+        } else if (itemId == R.id.reset) {
+            doReset();
+            return true;
+        } else if (itemId == R.id.start_all) {
+            if (!runCollector) startData();
+            if (!iniComputing && !runComputing) startComputing();
+            if (!iniRecording && !runRecording) startRecording();
+            return true;
+        } else if (itemId == R.id.start_stop_data) {
+            toggleData();
+            return true;
+        } else if (itemId == R.id.start_stop_computing) {
+            toggleComputing();
+            return true;
+        } else if (itemId == R.id.start_stop_recording) {
+            toggleRecording();
+            return true;
+        } else if (itemId == R.id.menu_about) {
+            showAboutDialog();
+            return true;
+        } else if (itemId == R.id.icon_tabulate) {
+            menuTabs++;
+            if (menuTabs > 2) menuTabs = 0;
+            switch (menuTabs) {
+                case 0:
+                    btnOne.setText("Info");
+                    btnTwo.setText("Wh");
+                    btnThree.setText("Ah");
+                    btnFour.setText("Watts");
+                    btnFive.setText("Drive");
+                    break;
+                case 1:
+                    btnOne.setText("Ops");
+                    btnTwo.setText("OBD");
+                    btnThree.setText("Cells");
+                    btnFour.setText("Volts");
+                    btnFive.setText("oC");
+                    break;
+                case 2:
+                    btnOne.setText("PIDs");
+                    btnTwo.setText("Calc");
+                    btnThree.setText("Chrg");
+                    btnFour.setText("Cap1");
+                    btnFive.setText("Cap2");
+            }
+            return true;
+        } else if (itemId == R.id.icon_restart) {
+            doRestart();
+            return true;
         }
+        return false;
     }
 
-    public void createFileDirectory() {
-        if (!okFileDir) {
+    public void createFileFolders() {
+        if (fileFolder == null || !fileFolder.exists()) {
             String state = Environment.getExternalStorageState();
             if (Environment.MEDIA_MOUNTED.equals(state)) {
                 if (SDK_INT < 30) {
-                    fileDir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() +
+                    fileFolder = new File(Environment.getExternalStorageDirectory().getAbsolutePath() +
                             "/OBDZero");
-                    strFileDir = "OBDZero";
+                    appFolder = fileFolder;
                 } else {
-                    fileDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath() +
+                    fileFolder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath() +
                             "/OBDZero");
-                    strFileDir = "Download/OBDZero";
+                    appFolder = new File(Objects.requireNonNull(getApplicationContext().getExternalFilesDir("")).getAbsolutePath());
                 }
-                if (!fileDir.exists()) {
-                    okFileDir = fileDir.mkdirs();
-                    if (!okFileDir) {
-                        updateInfo("app:The folder " + fileDir + "could");
+
+                if (!fileFolder.exists()) {
+                    if (!fileFolder.mkdirs()) {
+                        updateInfo("app:The folder " + fileFolder.toString() + "could");
                         updateInfo("app:not be created.");
                     }
-                } else {
-                    okFileDir = true;
                 }
+                if (!appFolder.exists()) {
+                    if (!appFolder.mkdirs()) {
+                        updateInfo("app:The folder " + appFolder.toString() + "could");
+                        updateInfo("app:not be created.");
+                    }
+                }
+
             } else if (Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
-                okFileDir = false;
                 updateInfo("app:Recording failed.");
                 updateInfo("app:Storage or SDCard are read only.");
             } else {
-                okFileDir = false;
                 updateInfo("app:Recording failed.");
                 updateInfo("app:No user storage or");
                 updateInfo("app:SDCard were found.");
@@ -944,27 +915,32 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        if (okFileDir) {
-            updateInfo("app:All data including initial");
-            updateInfo("app:values are stored in");
-            updateInfo("app:in the " + strFileDir + " folder");
-            updateInfo("app:on the phone or on");
-            updateInfo("app:an sdcard depending on how");
-            updateInfo("app:the phone is setup.");
-            getInitialValues();
-            showInitialValues();
-            updateInfo("app:Use the menu to");
-            updateInfo("app:change initial values or");
-            storeInitialValues();
+        if (fileFolder != null && fileFolder.exists()) {
+            if (!introShn) {
+                updateInfo("app:Download a user manual at");
+                updateInfo("app: OBDZero.dk");
+                updateInfo("app:Data are stored in the");
+                if (SDK_INT < 30)
+                    updateInfo("app:OBDZero folder");
+                else
+                    updateInfo("app:Download/OBDZero folder");
+                updateInfo("app:on the phone or on");
+                updateInfo("app:an sdcard depending on how");
+                updateInfo("app:the phone is setup.");
+                introShn = true;
+            }
         } else {
-            updateInfo("app:OBDZero will still work.");
+            updateInfo("app:OBDZero should still work.");
         }
         updateFrag(FRAG_INFO);
         finishOnStart();
     }
 
     public void finishOnStart() {
+        getInitialValues();
+        showInitialValues("Initial values...");
         if (serviceSerial.getState() != BluetoothSerialService.STATE_CONNECTED) {
+            updateInfo("app:Use the menu to");
             updateInfo("app:connect the dongle.");
         } else if (!isReset) {
             updateInfo("app:Use the menu to");
@@ -1019,25 +995,11 @@ public class MainActivity extends AppCompatActivity {
         updateFrag(FRAG_INFO);
     }
 
-    private void getInitialValues() {
-        if (okFileDir) {
-            okFileInitial = true;
-            iniFileNo = 0;
-            String strFileInitial;
-            if (SDK_INT < 30) {
-                strFileInitial = "OBDZero.ini";
-                fileInitial = new File(fileDir, "OBDZero.ini");
-            } else {
-                strFileInitial = "OBDZero00.ini";
-                while (new File(fileDir, strFileInitial).exists()) {
-                    iniFileNo++;
-                    strFileInitial = "OBDZero" + decFix00.format(iniFileNo) + ".ini";
-                }
-                iniFileNo--;
-                strFileInitial = "OBDZero" + decFix00.format(iniFileNo) + ".ini";
-                fileInitial = new File(fileDir, strFileInitial);
-            }
 
+    private void getInitialValues() {
+        if (appFolder != null && appFolder.exists()) {
+            boolean ok = true;
+            File fileInitial = new File(appFolder, "OBDZero.ini");
             if (fileInitial.exists()) {
                 ArrayList<String> linesToRead = new ArrayList<>();
                 try {
@@ -1047,14 +1009,13 @@ public class MainActivity extends AppCompatActivity {
                     while ((line = br.readLine()) != null) {
                         if (line.length() > 0) linesToRead.add(line);
                     }
-                    okFileInitial = true;
                 } catch (Exception e) {
                     if (DEBUG) Log.e(TAG, "getInitialValues " + e);
                     updateInfo("app:Error reading initial values file");
-                    okFileInitial = false;
+                    ok = false;
                 }
 
-                if (okFileInitial) {
+                if (ok) {
                     for (String aLine : linesToRead) {
                         if (aLine != null && aLine.contains(";")) {
                             String[] split = aLine.split(";");
@@ -1069,7 +1030,6 @@ public class MainActivity extends AppCompatActivity {
                                 } else if (split[0].contains("Remaining")) {
                                     try {
                                         i_Margin.dbl = parseDouble(split[1].replace(',', '.'));
-                                        t_RR.dbl = t_km.dbl + i_Margin.dbl;
                                     } catch (NumberFormatException e) {
                                         if (DEBUG) Log.e(TAG, "NumberFormatException " + e);
                                         updateInfo("app:The preferred margin is not a number");
@@ -1087,6 +1047,20 @@ public class MainActivity extends AppCompatActivity {
                                         i_RangeUnits = "km";
                                         updateInfo("app:The range units are km or miles.");
                                     }
+                                } else if (split[0].contains("Cell")) {
+                                    i_Chem = split[1];
+                                    if (!i_Chem.equals("LEV") && !i_Chem.equals("NMC")) {
+                                        i_Chem = "LEV";
+                                        updateInfo("app:The cell chemistry is LEV or NMC.");
+                                    }
+                                } else if (split[0].contains("capacity")) {
+                                    try {
+                                        i_Capacity.dbl = parseDouble(split[1].replace(',', '.'));
+                                        nmc_Ah.cap = i_Capacity.dbl;
+                                    } catch (NumberFormatException e) {
+                                        if (DEBUG) Log.e(TAG, "NumberFormatException " + e);
+                                        updateInfo("app:The battery capacity is not a number");
+                                    }
                                 } else if (split[0].contains("Odometer")) {
                                     i_OdoUnits = split[1];
                                     if (!i_OdoUnits.equals("km") && !i_OdoUnits.equals("miles")) {
@@ -1095,21 +1069,38 @@ public class MainActivity extends AppCompatActivity {
                                     }
                                 } else if (split[0].contains("Record")) {
                                     try {
-                                        i_RecordTime.dbl = parseDouble(split[1].replace(',', '.'));
+                                        i_Record.dbl = parseDouble(split[1].replace(',', '.'));
                                     } catch (NumberFormatException e) {
                                         if (DEBUG) Log.e(TAG, "NumberFormatException " + e);
                                         updateInfo("app:The minimum time between data records not a number");
                                     }
-                                    if (i_RecordTime.dbl > 60) i_RecordTime.dbl = 60;
-                                    else if (i_RecordTime.dbl < 0) i_RecordTime.dbl = 0;
+                                    if (i_Record.dbl > 60) i_Record.dbl = 60;
+                                    else if (i_Record.dbl < 0) i_Record.dbl = 0;
+                                } else if (split[0].contains("OCV")) {
+                                    i_OCV = split[1];
                                 } else if (split[0].contains("Dongle")) {
                                     if (split[1].length() == 17) {
                                         deviceMacAddress = split[1];
                                     } else {
                                         deviceMacAddress = null;
                                     }
+                                } else if (split[0].contains("time")) {
+                                    try {
+                                        i_Time = parseLong(split[1]);
+                                    } catch (NumberFormatException e) {
+                                        if (DEBUG) Log.e(TAG, "NumberFormatException " + e);
+                                        updateInfo("app:error previous time");
+                                    }
+                                } else if (split[0].contains("remaining Ah")) {
+                                    try {
+                                        i_RemAh.dbl = parseDouble(split[1].replace(',', '.'));
+                                    } catch (NumberFormatException e) {
+                                        if (DEBUG) Log.e(TAG, "NumberFormatException " + e);
+                                        updateInfo("app:Stored remaining Ah not a number.");
+                                    }
                                 }
                             }
+
                         } else if (aLine != null && aLine.contains(":")) {
                             updateInfo("app:" + aLine);
                             String[] split = aLine.split(":");
@@ -1124,7 +1115,6 @@ public class MainActivity extends AppCompatActivity {
                                 } else if (split[0].contains("Remaining")) {
                                     try {
                                         i_Margin.dbl = parseDouble(split[1].replace(',', '.'));
-                                        t_RR.dbl = t_km.dbl + i_Margin.dbl;
                                     } catch (NumberFormatException e) {
                                         if (DEBUG) Log.e(TAG, "NumberFormatException " + e);
                                         updateInfo("app:The preferred margin is not a number");
@@ -1152,68 +1142,58 @@ public class MainActivity extends AppCompatActivity {
                             }
                         }
                     }
-                    updateInfo("app:Initial values...");
                 } else {
                     updateInfo("app:The previous initial values");
-                    updateInfo("app:file, " + strFileInitial + ", could");
-                    updateInfo("app:not be read due to Android 11+");
+                    updateInfo("app:file OBDZero.ini could not");
+                    updateInfo("app:be read due to Android 11+");
                     updateInfo("app:rules.");
-                    updateInfo("app:A new file will be created.");
-                    updateInfo("app:Standard initial values...");
+                    updateInfo("app:A new file will be created");
+                    updateInfo("app:with standard initial values.");
                 }
             } else {
-                okFileInitial = false;
-                if (SDK_INT < 30) {
-                    strFileInitial = "OBDZero.ini";
-                } else {
-                    strFileInitial = "OBDZero" + decFix00.format(iniFileNo + 1) + ".ini";
-                }
-                updateInfo("app:The " + strFileInitial + " file");
+                updateInfo("app:The OBDZero.ini file");
                 updateInfo("app:was not found.");
-                updateInfo("app:A new file will created");
+                updateInfo("app:A new file will be created");
             }
+            storeInitialValues();
         } else {
-            okFileInitial = false;
-            updateInfo("app:The " + strFileDir + " directory");
-            updateInfo("app:was not available and the");
-            updateInfo("app:initial values were not retrieved.");
-            updateInfo("app:Try closing and reopening OBDZero.");
+            if (appFolder != null) {
+                updateInfo("app:The " + appFolder + " folder");
+                updateInfo("app:was not available and the");
+                updateInfo("app:initial values were not retrieved.");
+                updateInfo("app:Try closing and reopening OBDZero.");
+            }
         }
         updateFrag(FRAG_INFO);
     }
 
     private void storeInitialValues() {
-        if (okFileDir) {
-            String strFileInitial = "";
-            if (!okFileInitial) {
-                if (SDK_INT < 30) {
-                    strFileInitial = "OBDZero.ini";
-                    fileInitial = new File(fileDir, "OBDZero.ini");
-                } else {
-                    iniFileNo++;
-                    strFileInitial = "OBDZero" + decFix00.format(iniFileNo) + ".ini";
-                    fileInitial = new File(fileDir, strFileInitial);
-                }
-            }
-            okFileInitial = true;
-            if (fileInitial.exists()) okFileInitial = fileInitial.delete();
-            if (okFileInitial) {
+        if (appFolder != null && appFolder.exists()) {
+            File fileInitial = new File(appFolder, "OBDZero.ini");
+            boolean ok = true;
+            if (fileInitial.exists()) ok = fileInitial.delete();
+            if (ok) {
                 try {
                     FileOutputStream out = new FileOutputStream(fileInitial);
                     OutputStreamWriter osw = new OutputStreamWriter(out);
                     String textToWrite;
-                    textToWrite = "Number of initial values;7;\r\n";
+                    textToWrite = "Number of initial values;10;\r\n";
                     textToWrite += "True speed at 100 km/h;" + i_Spd100.str() + ";\r\n";
                     textToWrite += "Remaining km at charging station;" + i_Margin.str() + ";\r\n";
                     textToWrite += "Load in the car kg;" + i_Load.str() + ";\r\n";
+                    textToWrite += "Cell chemistry;" + i_Chem + ";\r\n";
+                    textToWrite += "NMC capacity Ah;" + i_Capacity.str() + ";\r\n";
                     textToWrite += "Range units;" + i_RangeUnits + ";\r\n";
                     textToWrite += "Odometer units;" + i_OdoUnits + ";\r\n";
-                    textToWrite += "Record minimum sec;" + i_RecordTime.str() + ";\r\n";
+                    textToWrite += "OCV calibration;" + i_OCV + ";\r\n";
+                    textToWrite += "Record minimum sec;" + i_Record.str() + ";\r\n";
                     if (deviceMacAddress != null) {
                         textToWrite += "Dongle in use;" + deviceMacAddress + ";\r\n";
                     } else {
                         textToWrite += "Dongle in use;none;\r\n";
                     }
+                    textToWrite += "Stored at time;" + currentTimeMillis() + ";\r\n";
+                    textToWrite += "NMC remaining Ah;" + nmc_Ah.remStr() + ";\r\n";
                     osw.write(textToWrite);
                     osw.flush();
                     osw.close();
@@ -1223,27 +1203,21 @@ public class MainActivity extends AppCompatActivity {
                             null,
                             (path, uri) -> Log.i(TAG,
                                     "file was scanned successfully: " + uri));
+
                 } catch (Exception e) {
                     if (DEBUG) Log.e(TAG, "storeInitialValues " + e);
-                    okFileInitial = false;
                     updateInfo("app:" + e);
-                    updateInfo("app:The " + strFileInitial + " file");
+                    updateInfo("app:The OBDZero.ini file");
                     updateInfo("app:could not be created.");
                     updateInfo("app:The initial values were not saved.");
                 }
             } else {
-                updateInfo("app:The " + strFileInitial + " file");
+                updateInfo("app:The OBDZero.ini file");
                 updateInfo("app:could not be deleted and recreated.");
                 updateInfo("app:The initial values were not saved.");
             }
-        } else {
-            okFileInitial = false;
-            updateInfo("app:The " + strFileDir + " directory");
-            updateInfo("app:was not available.");
-            updateInfo("app:The initial values were not saved.");
-            updateInfo("app:Try closing and reopening OBDZero.");
+            updateFrag(FRAG_INFO);
         }
-        updateFrag(FRAG_INFO);
     }
 
     private void doInitialValues() {
@@ -1251,20 +1225,29 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(this, InitialValuesActivity.class);
             InitialValuesLauncher.launch(intent);
         } else {
-            updateInfo("app:Stop data before changing");
-            updateInfo("app:the initial values.");
+            updateInfo("app:Please stop data before");
+            updateInfo("app:changing the initial values.");
             updateFrag(FRAG_INFO);
         }
     }
 
-    private void showInitialValues() {
-        updateInfo("app:True speed at 100 km/h: " + i_Spd100.str());
-        updateInfo("app:Remaining km before charging: " + i_Margin.str());
-        updateInfo("app:Load in the car kg: " + i_Load.str());
-        updateInfo("app:Range units (dashboard): " + i_RangeUnits);
-        updateInfo("app:Odometer units (OBDscreen): " + i_OdoUnits);
-        updateInfo("app:Recording minimum seconds: " + i_RecordTime.str());
-        updateFrag(FRAG_INFO);
+    private void showInitialValues(String lineFirst) {
+        if (!iniShown) {
+            updateInfo("app:" + lineFirst);
+            updateInfo("app:True speed at 100 km/h or mph: " + i_Spd100.str());
+            updateInfo("app:Remaining km before charging: " + i_Margin.str());
+            updateInfo("app:Load in the car kg: " + i_Load.str());
+            updateInfo("app:Cell type LEV or NMC: " + i_Chem);
+            updateInfo("app:Capacity NMC only Ah: " + i_Capacity.str());
+            updateInfo("app:Range units (dashboard): " + i_RangeUnits);
+            updateInfo("app:Odometer units (OBDscreen): " + i_OdoUnits);
+            updateInfo("app:OCV calibration: " + i_OCV);
+            updateInfo("app:Recording minimum seconds: " + i_Record.str());
+            updateInfo("app:Use the menu to");
+            updateInfo("app:change initial values.");
+            updateFrag(FRAG_INFO);
+            iniShown = true;
+        }
     }
 
     private void toggleConnect() {
@@ -1356,24 +1339,24 @@ public class MainActivity extends AppCompatActivity {
         if (iniComputing) iniComputations();
         if (runComputing) doComputations();
         if (iniRecording) iniStorage();
-        String state = Environment.getExternalStorageState();
-        if (Environment.MEDIA_MOUNTED.equals(state)) {
-            String storedDateTime = strDateTime(stepDateTime);
-            StorePIDs(storedDateTime);
-            StorePIDIntegers(storedDateTime);
-            if (okData && m_newPIDs > 0) {
-                if (runRecording && (recordTime > 1000L * i_RecordTime.in() || bmuTime == 0)) {
+        if (runRecording) {
+            String state = Environment.getExternalStorageState();
+            if (Environment.MEDIA_MOUNTED.equals(state)) {
+                String storedDateTime = strDateTime(stepDateTime);
+                StorePIDs(storedDateTime);
+                StorePIDIntegers(storedDateTime);
+                if (recordTime > 1000L * i_Record.in() || bmuTime == 0) {
                     recordTime = 0;
                     StoreOBD(storedDateTime);
+                    if (runComputing) StoreCalc(storedDateTime);
                     if (cellsData) {
                         StoreCells(storedDateTime);
                         StoreCellTemperatures(storedDateTime);
                     }
-                    if (runComputing) StoreCalc(storedDateTime);
                 }
             }
         }
-        updateTimers();
+        cycleTimer();
         updateInfo("app:Step " + stepTime + " ms.");
         stepTime = 0;
         recordTime += cycleTime;
@@ -1386,7 +1369,7 @@ public class MainActivity extends AppCompatActivity {
         for (CellSensor aSensor : listSensors) aSensor.isNew = false;
         allPIDs.clear();
         if (serviceSerial != null)
-            if (bmuTime > 60000L) {
+            if (bmuTime > 30000L) {
                 bmuTime = 0;
                 serviceSerial.startBMU();
             } else {
@@ -1417,9 +1400,6 @@ public class MainActivity extends AppCompatActivity {
         if (!runCollector) startData();
         updateInfo("app:Calc is waiting for data.");
         itemMenuStartStopComputing.setTitle(menu_stop_computing);
-        c_Odo.dbl = 0;
-        b_Volts.dbl = 0;
-        c_SoC2.dbl = 0;
         iniComputing = true;
     }
 
@@ -1441,22 +1421,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startRecording() {
-        if (okFileDir) {
-            if (!iniRecording && !runRecording) {
-                itemMenuStartStopRecording.setTitle(menu_stop_recording);
-                iniRecording = true;
-                updateInfo("app:Recording initialised");
-            }
+        if (fileFolder != null && fileFolder.exists()) {
+            iniRecording = true;
         } else {
+            iniRecording = false;
             updateInfo("app:OBDZero does not have");
-            updateInfo("app:storage permission");
+            updateInfo("app:access to storage.");
             updateFrag(FRAG_INFO);
         }
-
     }
 
     private void stopRecording() {
-        if (runRecording) exposeFiles();
         itemMenuStartStopRecording.setTitle(menu_start_recording);
         iniRecording = false;
         runRecording = false;
@@ -1465,13 +1440,13 @@ public class MainActivity extends AppCompatActivity {
         updateFrag(FRAG_INFO);
     }
 
+    @SuppressLint("SetTextI18n")
     private void showAboutDialog() {
         dialogAbout = new Dialog(this);
         dialogAbout.setContentView(R.layout.about);
 
-        String version = BuildConfig.VERSION_NAME;
         TextView name_version = dialogAbout.findViewById(R.id.app_version);
-        name_version.setText("OBDZero Version " + version);
+        name_version.setText("OBDZero Version " + BuildConfig.VERSION_NAME);
 
         Button buttonOpen = dialogAbout.findViewById(R.id.buttonDialog);
         buttonOpen.setOnClickListener(v -> dialogAbout.dismiss());
@@ -1614,7 +1589,7 @@ public class MainActivity extends AppCompatActivity {
                     c_Steering.dbl = (aPID.intr[0] * 256 + aPID.intr[1] - 4096) / 30.0;
                     break;
                 case "285":
-                    c_Acceleration.dbl = ((aPID.intr[0] * 256 + aPID.intr[1]) - 2000) / 400.0;
+                    c_Acc.dbl = ((aPID.intr[0] * 256 + aPID.intr[1]) - 2000) / 400.0;
                     calcGear(aPID);
                     break;
                 case "286":
@@ -1633,28 +1608,39 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case "346":
                     c_RRshown.dbl = aPID.intr[7];
-                    if (i_RangeUnits.equals("miles"))
-                        c_RestRange.dbl = KmPerMile * aPID.intr[7];
-                    else c_RestRange.dbl = aPID.intr[7];
+                    double RR;
+                    if (c_RRshown.dbl < 255 && c_RRshown.dbl > 0) {
+                        if (i_RangeUnits.equals("miles"))
+                            RR = KmPerMile * c_RRshown.dbl;
+                        else RR = c_RRshown.dbl;
+                        if (RR > 0) c_Ah.Whkm = c_Ah.remWh10() / RR;
+                    }
                     break;
                 case "373":
-                    b_BatVmax.dbl = (aPID.intr[0] + 210) / 100.0;
-                    b_BatVmin.dbl = (aPID.intr[1] + 210) / 100.0;
-                    b_Amps.dbl = (aPID.intr[2] * 256 + aPID.intr[3] - 32768) / 100.0;
-                    if (b_Amps.dbl < 200 && b_Amps.dbl > -200) {
-                        c_Amps.dbl = -b_Amps.dbl;
-                        c_AmpsCal.dbl = -(b_Amps.dbl + 0.68);
+                    if (aPID.intr[0] > 60 && aPID.intr[0] < 220)
+                        b_BatVmax.dbl = (aPID.intr[0] + 210) / 100.0;
+                    if (aPID.intr[1] > 60 && aPID.intr[1] < 220)
+                        b_BatVmin.dbl = (aPID.intr[1] + 210) / 100.0;
+                    if (b_BatVmin.dbl > 0 && b_BatVmax.dbl > 0)
+                        b_BatVavg.dbl = (b_BatVmin.dbl + b_BatVmax.dbl) / 2.0;
+                    b_Amps68.dbl = (aPID.intr[2] * 256 + aPID.intr[3] - 32768) / 100.0;
+                    if (b_Amps68.dbl > -200 && b_Amps68.dbl < 200) {
+                        c_AmpsCal.dbl = -(aPID.intr[2] * 256 + aPID.intr[3] - 32700) / 100.0;
                     }
-                    if (aPID.intr[4] > 9)
+                    if (aPID.intr[4] > 9) {
                         b_Volts.dbl = (aPID.intr[4] * 256 + aPID.intr[5]) / 10.0;
-                    b_Watts.dbl = c_AmpsCal.dbl * b_Volts.dbl;
+                        c_WattsCal.dbl = c_AmpsCal.dbl * b_Volts.dbl;
+                    }
                     break;
                 case "374":
-                    if (aPID.intr[0] > 10) c_SoC1.dbl = (aPID.intr[0] - 10.0) / 2.0;
-                    if (aPID.intr[1] > 10) c_SoC2.dbl = (aPID.intr[1] - 10.0) / 2.0;
+                    if (aPID.intr[0] > 10) b_SoC1.dbl = (aPID.intr[0] - 10.0) / 2.0;
+                    if (aPID.intr[1] > 10) b_SoC2.dbl = (aPID.intr[1] - 10.0) / 2.0;
                     b_BatTmax.dbl = (aPID.intr[4] - 50.0);
                     b_BatTmin.dbl = (aPID.intr[5] - 50.0);
-                    if (aPID.intr[6] > 0) c_CapAh.dbl = aPID.intr[6] / 2.0;
+                    if (aPID.intr[6] > 0) {
+                        c_Ah.cap = aPID.intr[6] / 2.0;
+                        if (b_SoC2.dbl > -1) c_Ah.rem = b_SoC2.dbl * c_Ah.cap / 100.0;
+                    }
                     break;
                 case "384":
                     if (aPID.intr[0] < 255) {
@@ -1708,11 +1694,8 @@ public class MainActivity extends AppCompatActivity {
                     if (aPID.intr[2] > 0 && aPID.intr[2] < 7)
                         c_MotorA.dbl = (256 * aPID.intr[2] + aPID.intr[3] - 500) / 20.0;
                     if (c_MotorA.dbl < 0) c_MotorA.dbl = 0;
-                    if (aPID.intr[6] > 37 && aPID.intr[6] < 40) {
+                    if (aPID.intr[6] > 37 && aPID.intr[6] < 40)
                         c_RegA.dbl = (256 * aPID.intr[6] + aPID.intr[7] - 10000) / 5.0;
-                    } else {
-                        c_RegA.dbl = 0;
-                    }
                     break;
                 case "697":
                     c_QuickCharge.dbl = aPID.intr[0];
@@ -1728,12 +1711,12 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case "762":
                     if (aPID.intr[0] == 36) {
-                        if (aPID.intr[3] > 0 || aPID.intr[4] > 0)
-                            b_BMUCapAh.dbl = (aPID.intr[3] * 256 + aPID.intr[4]) / 10.0;
-                        if (aPID.intr[5] > 0 || aPID.intr[6] > 0)
-                            b_BMURemAh.dbl = (aPID.intr[5] * 256 + aPID.intr[6]) / 10.0;
-                        if (b_BMUCapAh.dbl > 0)
-                            b_BMUSoC.dbl = 100 * b_BMURemAh.dbl / b_BMUCapAh.dbl;
+                        if (aPID.intr[3] > 0 || aPID.intr[4] > 0) {
+                            bmu_Ah.cap = (aPID.intr[3] * 256 + aPID.intr[4]) / 10.0;
+                        }
+                        if (aPID.intr[5] > 0 || aPID.intr[6] > 0) {
+                            bmu_Ah.rem = (aPID.intr[5] * 256 + aPID.intr[6]) / 10.0;
+                        }
                     }
                     break;
                 default:
@@ -1747,17 +1730,12 @@ public class MainActivity extends AppCompatActivity {
             if (aPID.isFound) foundPIDs++;
             if (aPID.isNew) newPIDs++;
         }
-        if (newPIDs == 0 && m_newPIDs == 0) {
-            b_Amps.dbl = 0;
-            c_Amps.dbl = 0;
-            c_AmpsCal.dbl = 0;
-        }
+        if (newPIDs == 0 && m_newPIDs == 0) c_AmpsCal.dbl = 0;
         m_newPIDs = newPIDs;
 
         updateInfo("app:PIDs detected since start: " + foundPIDs);
         updateInfo("app:PIDs updated in this cycle: " + newPIDs);
 
-        calcBatSoC();
         calcCellNumber();
         cells88 = m_CellsNo == 88;
 
@@ -1768,9 +1746,6 @@ public class MainActivity extends AppCompatActivity {
                 if (aCell.isFound) foundCells++;
                 if (aCell.isNew) newCells++;
             }
-            calcCellTemperatures();
-            calcCellVMaxMin();
-            calcCellSoC();
             if (foundCells == m_CellsNo) {
                 btnThree.setBackgroundColor(clrDarkGreen);
             } else {
@@ -1780,7 +1755,9 @@ public class MainActivity extends AppCompatActivity {
             btnThree.setBackgroundColor(BLACK);
         }
 
-        okData = c_Odo.dbl > 0 && b_Volts.dbl > 220 && c_SoC2.dbl > 0;
+        calcCellTemperatures();
+        calcCellSoC();
+        calcCellVMaxMin();
 
         updateInfo("app:Cells detected since start: " + foundCells);
         updateInfo("app:Cells updated in this cycle: " + newCells);
@@ -1916,108 +1893,250 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void calcCells(PID aPID) {
-        if (aPID.isNew) {
-            int module = aPID.intr[0];
-            switch (aPID.str[0]) {
-                case "6E1":
-                    int index = (module - 1) * 8;
-                    listCells[index].module = module;
-                    listCells[index].cell = 1;
-                    listCells[index].volts = (aPID.intr[4] * 256 + aPID.intr[5] + 420) / 200.0;
-                    listCells[index].isFound = true;
-                    listCells[index].isNew = true;
-
-                    listSensors[index].module = module;
-                    listSensors[index].sensor = 1;
-                    listSensors[index].temperature = aPID.intr[2] - 50;
-                    listSensors[index].isNew = true;
-
-                    index = (module - 1) * 8 + 1;
-                    listCells[index].module = module;
-                    listCells[index].cell = 2;
-                    listCells[index].volts = (aPID.intr[6] * 256 + aPID.intr[7] + 420) / 200.0;
-                    listCells[index].isFound = true;
-                    listCells[index].isNew = true;
-
-                    listSensors[index].module = module;
-                    listSensors[index].sensor = 2;
-                    listSensors[index].temperature = aPID.intr[3] - 50;
-                    listSensors[index].isNew = true;
-                    break;
-                case "6E2":
-                    index = (module - 1) * 8 + 2;
-                    listCells[index].module = module;
-                    listCells[index].cell = 3;
-                    listCells[index].volts = (aPID.intr[4] * 256 + aPID.intr[5] + 420) / 200.0;
-                    listCells[index].isFound = true;
-                    listCells[index].isNew = true;
-
-                    listSensors[index].module = module;
-                    listSensors[index].sensor = 3;
-                    listSensors[index].temperature = aPID.intr[1] - 50;
-                    listSensors[index].isNew = true;
-
-                    index = (module - 1) * 8 + 3;
-                    listCells[index].module = module;
-                    listCells[index].cell = 4;
-                    listCells[index].volts = (aPID.intr[6] * 256 + aPID.intr[7] + 420) / 200.0;
-                    listCells[index].isFound = true;
-                    listCells[index].isNew = true;
-
-                    if (module != 6 && module != 12) {
-                        listSensors[index].module = module;
-                        listSensors[index].sensor = 4;
-                        listSensors[index].temperature = aPID.intr[2] - 50;
-                        listSensors[index].isNew = true;
-                    }
-                    break;
-                case "6E3":
-                    if (module != 6 && module != 12) {
-                        index = (module - 1) * 8 + 4;
+        if (cellsData)
+            if (aPID.isNew) {
+                int module = aPID.intr[0];
+                switch (aPID.str[0]) {
+                    case "6E1":
+                        int index = (module - 1) * 8;
                         listCells[index].module = module;
-                        listCells[index].cell = 5;
-                        listCells[index].volts = (aPID.intr[4] * 256 + aPID.intr[5] + 420) / 200.0;
+                        listCells[index].cell = 1;
+                        if ((aPID.intr[4] == 0 && aPID.intr[5] > 60) || aPID.intr[4] > 0)
+                            listCells[index].volts = (aPID.intr[4] * 256 + aPID.intr[5] + 420) / 200.0;
                         listCells[index].isFound = true;
                         listCells[index].isNew = true;
 
                         listSensors[index].module = module;
-                        listSensors[index].sensor = 5;
+                        listSensors[index].sensor = 1;
+                        listSensors[index].temperature = aPID.intr[2] - 50;
+                        listSensors[index].isNew = true;
+
+                        index = (module - 1) * 8 + 1;
+                        listCells[index].module = module;
+                        listCells[index].cell = 2;
+                        if ((aPID.intr[6] == 0 && aPID.intr[7] > 60) || aPID.intr[6] > 0)
+                            listCells[index].volts = (aPID.intr[6] * 256 + aPID.intr[7] + 420) / 200.0;
+                        listCells[index].isFound = true;
+                        listCells[index].isNew = true;
+
+                        listSensors[index].module = module;
+                        listSensors[index].sensor = 2;
+                        listSensors[index].temperature = aPID.intr[3] - 50;
+                        listSensors[index].isNew = true;
+                        break;
+                    case "6E2":
+                        index = (module - 1) * 8 + 2;
+                        listCells[index].module = module;
+                        listCells[index].cell = 3;
+                        if ((aPID.intr[4] == 0 && aPID.intr[5] > 60) || aPID.intr[4] > 0)
+                            listCells[index].volts = (aPID.intr[4] * 256 + aPID.intr[5] + 420) / 200.0;
+                        listCells[index].isFound = true;
+                        listCells[index].isNew = true;
+
+                        listSensors[index].module = module;
+                        listSensors[index].sensor = 3;
                         listSensors[index].temperature = aPID.intr[1] - 50;
                         listSensors[index].isNew = true;
 
-                        index = (module - 1) * 8 + 5;
+                        index = (module - 1) * 8 + 3;
                         listCells[index].module = module;
-                        listCells[index].cell = 6;
-                        listCells[index].volts = (aPID.intr[6] * 256 + aPID.intr[7] + 420) / 200.0;
+                        listCells[index].cell = 4;
+                        if ((aPID.intr[6] == 0 && aPID.intr[7] > 60) || aPID.intr[6] > 0)
+                            listCells[index].volts = (aPID.intr[6] * 256 + aPID.intr[7] + 420) / 200.0;
                         listCells[index].isFound = true;
                         listCells[index].isNew = true;
 
-                        listSensors[index].module = module;
-                        listSensors[index].sensor = 6;
-                        listSensors[index].temperature = aPID.intr[2] - 50;
-                        listSensors[index].isNew = true;
-                    }
-                    break;
-                case "6E4":
-                    if (module != 6 && module != 12) {
-                        index = (module - 1) * 8 + 6;
-                        listCells[index].module = module;
-                        listCells[index].cell = 7;
-                        listCells[index].volts = (aPID.intr[4] * 256 + aPID.intr[5] + 420) / 200.0;
-                        listCells[index].isFound = true;
-                        listCells[index].isNew = true;
+                        if (module != 6 && module != 12) {
+                            listSensors[index].module = module;
+                            listSensors[index].sensor = 4;
+                            listSensors[index].temperature = aPID.intr[2] - 50;
+                            listSensors[index].isNew = true;
+                        }
+                        break;
+                    case "6E3":
+                        if (module != 6 && module != 12) {
+                            index = (module - 1) * 8 + 4;
+                            listCells[index].module = module;
+                            listCells[index].cell = 5;
+                            if ((aPID.intr[4] == 0 && aPID.intr[5] > 60) || aPID.intr[4] > 0)
+                                listCells[index].volts = (aPID.intr[4] * 256 + aPID.intr[5] + 420) / 200.0;
+                            listCells[index].isFound = true;
+                            listCells[index].isNew = true;
 
-                        index = (module - 1) * 8 + 7;
-                        listCells[index].module = module;
-                        listCells[index].cell = 8;
-                        listCells[index].volts = (aPID.intr[6] * 256 + aPID.intr[7] + 420) / 200.0;
-                        listCells[index].isFound = true;
-                        listCells[index].isNew = true;
+                            listSensors[index].module = module;
+                            listSensors[index].sensor = 5;
+                            listSensors[index].temperature = aPID.intr[1] - 50;
+                            listSensors[index].isNew = true;
 
-                    }
-                    break;
+                            index = (module - 1) * 8 + 5;
+                            listCells[index].module = module;
+                            listCells[index].cell = 6;
+                            if ((aPID.intr[6] == 0 && aPID.intr[7] > 60) || aPID.intr[6] > 0)
+                                listCells[index].volts = (aPID.intr[6] * 256 + aPID.intr[7] + 420) / 200.0;
+                            listCells[index].isFound = true;
+                            listCells[index].isNew = true;
+
+                            listSensors[index].module = module;
+                            listSensors[index].sensor = 6;
+                            listSensors[index].temperature = aPID.intr[2] - 50;
+                            listSensors[index].isNew = true;
+                        }
+                        break;
+                    case "6E4":
+                        if (module != 6 && module != 12) {
+                            index = (module - 1) * 8 + 6;
+                            listCells[index].module = module;
+                            listCells[index].cell = 7;
+                            if ((aPID.intr[4] == 0 && aPID.intr[5] > 60) || aPID.intr[4] > 0)
+                                listCells[index].volts = (aPID.intr[4] * 256 + aPID.intr[5] + 420) / 200.0;
+                            listCells[index].isFound = true;
+                            listCells[index].isNew = true;
+
+                            index = (module - 1) * 8 + 7;
+                            listCells[index].module = module;
+                            listCells[index].cell = 8;
+                            if ((aPID.intr[6] == 0 && aPID.intr[7] > 60) || aPID.intr[6] > 0)
+                                listCells[index].volts = (aPID.intr[6] * 256 + aPID.intr[7] + 420) / 200.0;
+                            listCells[index].isFound = true;
+                            listCells[index].isNew = true;
+
+                        }
+                        break;
+                }
             }
+    }
+
+    private void calcCellNumber() {
+        if (cellsData)
+            if (b_Volts.dbl > 0 && b_BatVmax.dbl > 0 && b_BatVmin.dbl > 0) {
+                double cells = b_Volts.dbl / ((b_BatVmax.dbl + b_BatVmin.dbl) / 2.0);
+                if (cells > 79 && cells < 89)
+                    if (cells < 84) {
+                        m_CellsNo = 80;
+                        for (Cell aCell : listCells) {
+                            if (aCell.module == 6 || aCell.module == 12) {
+                                aCell.volts = 0;
+                                aCell.temperature = -50;
+                                aCell.isFound = false;
+                                aCell.isNew = false;
+                            }
+                        }
+                        for (CellSensor aSensor : listSensors) {
+                            if (aSensor.module == 6 || aSensor.module == 12) {
+                                aSensor.temperature = -50;
+                                aSensor.isNew = false;
+                            }
+                        }
+                    } else {
+                        m_CellsNo = 88;
+                    }
+            }
+    }
+
+    private void calcCellTemperatures() {
+        if (cellsData) {
+            double sum = 0;
+            int k = 0;
+            for (int i = 0; i < 96; i++)
+                if (listCells[i].isFound)
+                    switch (listCells[i].cell) {
+                        case 1:
+                            listCells[i].temperature = listSensors[i].temperature;
+                            break;
+                        case 2:
+                        case 3:
+                            listCells[i].temperature = (listSensors[i - 1].temperature + listSensors[i].temperature) / 2.0;
+                            break;
+                        case 4:
+                        case 5:
+                            listCells[i].temperature = listSensors[i - 1].temperature;
+                            break;
+                        case 6:
+                        case 7:
+                            listCells[i].temperature = (listSensors[i - 2].temperature + listSensors[i - 1].temperature) / 2.0;
+                            break;
+                        case 8:
+                            listCells[i].temperature = listSensors[i - 2].temperature;
+                            break;
+                        default:
+                            listCells[i].temperature = -50;
+                            break;
+                    }
+
+            for (Cell aCell : listCells)
+                if (aCell.isFound && aCell.temperature > -50) {
+                    sum += aCell.temperature;
+                    k++;
+                }
+            if (k > 79) b_Temp.dbl = sum / k;
+            else b_Temp.dbl = (b_BatTmax.dbl + b_BatTmin.dbl) / 2.0;
         }
+    }
+
+    private void calcCellSoC() {
+        if (cellsData) {
+            double SoC = 0;
+            double sum = 0;
+            int i = 0;
+            for (Cell aCell : listCells) {
+                if (aCell.isFound) SoC = OCV.model(aCell.SoC, aCell.volts, i_Chem, i_OCV);
+                if (SoC > -1) {
+                    aCell.SoC = SoC;
+                    sum += aCell.SoC;
+                    i++;
+                }
+            }
+            if (i > 79) m_SoCavg.dbl = sum / i;
+            else m_SoCavg.dbl = -1;
+        }
+    }
+
+    private void calcCellVMaxMin() {
+        if (cellsData) {
+            double maxVolts = 0.0;
+            double minVolts = 5.0;
+            for (Cell aCell : listCells) {
+                if (aCell.isFound) {
+                    if ((cells88 || aCell.module != 6) && (cells88 || aCell.module != 12)) {
+                        if (aCell.volts > maxVolts) {
+                            maxVolts = aCell.volts;
+                            b_Cellmax.volts = aCell.volts;
+                            b_Cellmax.module = aCell.module;
+                            b_Cellmax.cell = aCell.cell;
+                            b_Cellmax.SoC = aCell.SoC;
+                            b_Cellmax.temperature = aCell.temperature;
+                            b_Cellmax.isFound = true;
+                            b_Cellmax.isNew = true;
+                        } else if (aCell.volts < minVolts) {
+                            minVolts = aCell.volts;
+                            b_Cellmin.volts = aCell.volts;
+                            b_Cellmin.module = aCell.module;
+                            b_Cellmin.cell = aCell.cell;
+                            b_Cellmin.SoC = aCell.SoC;
+                            b_Cellmin.temperature = aCell.temperature;
+                            b_Cellmin.isFound = true;
+                            b_Cellmin.isNew = true;
+                        }
+                    }
+                }
+            }
+        } else {
+            b_Cellmax.volts = b_BatVmax.dbl;
+            b_Cellmax.temperature = b_Temp.dbl;
+            b_Cellmax.SoC = OCV.model(b_Cellmax.SoC, b_Cellmax.volts, i_Chem, i_OCV);
+            b_Cellmax.isFound = true;
+            b_Cellmax.isNew = true;
+            b_Cellmin.volts = b_BatVmin.dbl;
+            b_Cellmin.temperature = b_Temp.dbl;
+            b_Cellmin.SoC = OCV.model(b_Cellmin.SoC, b_Cellmin.volts, i_Chem, i_OCV);
+            b_Cellmin.isFound = true;
+            b_Cellmin.isNew = true;
+        }
+        b_Cellavg.volts = b_Volts.dbl / m_CellsNo;
+        b_Cellavg.temperature = b_Temp.dbl;
+        b_Cellavg.SoC = OCV.model(b_Cellavg.SoC, b_Cellavg.volts, i_Chem, i_OCV);
+        b_Cellavg.isFound = true;
+        b_Cellavg.isNew = true;
     }
 
     private void calcVIN(PID aPID) {
@@ -2103,235 +2222,127 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void calcCellNumber() {
-        if (b_Volts.dbl > 0 && b_BatVmax.dbl > 0 && b_BatVmin.dbl > 0) {
-            double cells = b_Volts.dbl / ((b_BatVmax.dbl + b_BatVmin.dbl) / 2.0);
-            if (cells > 79 && cells < 89)
-                if (cells < 84) {
-                    m_CellsNo = 80;
-                    for (Cell aCell : listCells) {
-                        if (aCell.module == 6 || aCell.module == 12) {
-                            aCell.volts = 0;
-                            aCell.temperature = -50;
-                            aCell.isFound = false;
-                            aCell.isNew = false;
-                        }
-                    }
-                    for (CellSensor aSensor : listSensors) {
-                        if (aSensor.module == 6 || aSensor.module == 12) {
-                            aSensor.temperature = -50;
-                            aSensor.isNew = false;
-                        }
-                    }
-                } else {
-                    m_CellsNo = 88;
-                }
-            b_BatVavg.dbl = b_Volts.dbl / m_CellsNo;
-        }
-    }
-
-    private void calcCellTemperatures() {
-        double sum = 0;
-        int k = 0;
-        for (int i = 0; i < 96; i++)
-            if (listCells[i].isFound)
-                switch (listCells[i].cell) {
-                    case 1:
-                        listCells[i].temperature = listSensors[i].temperature;
-                        break;
-                    case 2:
-                    case 3:
-                        listCells[i].temperature = (listSensors[i - 1].temperature + listSensors[i].temperature) / 2.0;
-                        break;
-                    case 4:
-                    case 5:
-                        listCells[i].temperature = listSensors[i - 1].temperature;
-                        break;
-                    case 6:
-                    case 7:
-                        listCells[i].temperature = (listSensors[i - 2].temperature + listSensors[i - 1].temperature) / 2.0;
-                        break;
-                    case 8:
-                        listCells[i].temperature = listSensors[i - 2].temperature;
-                        break;
-                    default:
-                        listCells[i].temperature = -50;
-                        break;
-                }
-
-        for (Cell aCell : listCells)
-            if (aCell.isFound && aCell.temperature > -50) {
-                sum += aCell.temperature;
-                k++;
-            }
-        if (k > 40) b_Temp.dbl = sum / k;
-        else b_Temp.dbl = (b_BatTmax.dbl + b_BatTmin.dbl) / 2.0;
-    }
-
-    private void calcCellVMaxMin() {
-        b_CellVmax.volts = 0;
-        b_CellVmin.volts = 5;
-        b_CellVsum.dbl = 0;
-        int k = 0;
-        for (Cell aCell : listCells) {
-            if (aCell.isFound) {
-                if ((cells88 || aCell.module != 6) && (cells88 || aCell.module != 12)) {
-                    if (aCell.volts > b_CellVmax.volts) {
-                        b_CellVmax.volts = aCell.volts;
-                        b_CellVmax.module = aCell.module;
-                        b_CellVmax.cell = aCell.cell;
-                        b_CellVmax.temperature = aCell.temperature;
-                        b_CellVmax.isFound = true;
-                        b_CellVmax.isNew = true;
-                    } else if (aCell.volts < b_CellVmin.volts) {
-                        b_CellVmin.volts = aCell.volts;
-                        b_CellVmin.module = aCell.module;
-                        b_CellVmin.cell = aCell.cell;
-                        b_CellVmin.temperature = aCell.temperature;
-                        b_CellVmin.isFound = true;
-                        b_CellVmin.isNew = true;
-                    }
-                    b_CellVsum.dbl += aCell.volts;
-                }
-                k++;
-            }
-        }
-
-        if (k < m_CellsNo) {
-            b_CellVsum.dbl = b_Volts.dbl;
-            b_CellVavg.dbl = (b_BatVmax.dbl + b_BatVmin.dbl) / 2.0;
-        } else {
-            b_CellVavg.dbl = b_CellVsum.dbl / m_CellsNo;
-        }
-    }
-
-    private void calcCellSoC() {
-        if (c_SoC1.dbl > 0) {
-            for (Cell aCell : listCells) {
-                if (aCell.isFound && aCell.SoC > 0) {
-                    aCell.SoC = OCVmodel(aCell.SoC, aCell.volts, aCell.temperature);
-                    if (b_CellVmax.module == aCell.module && b_CellVmax.cell == aCell.cell) {
-                        b_CellVmax.SoC = aCell.SoC;
-                    }
-                    if (b_CellVmin.module == aCell.module && b_CellVmin.cell == aCell.cell) {
-                        b_CellVmin.SoC = aCell.SoC;
-                    }
-                } else {
-                    aCell.SoC = c_SoC1.dbl;
-                }
-            }
-            double sum = 0;
-            int i = 0;
-            for (Cell aCell : listCells) {
-                if (aCell.isFound && aCell.SoC > 0) {
-                    sum += aCell.SoC;
-                    i++;
-                }
-            }
-            if (i > 0) m_SoCavg.dbl = sum / i;
-        }
-    }
-
-    private void calcBatSoC() {
-        b_BatSoCmax.dbl = OCVmodel(b_BatSoCmax.dbl, b_BatVmax.dbl, b_Temp.dbl);
-        b_BatSoCmin.dbl = OCVmodel(b_BatSoCmin.dbl, b_BatVmin.dbl, b_Temp.dbl);
-        b_BatSoCavg.dbl = OCVmodel(b_BatSoCavg.dbl, b_BatVavg.dbl, b_Temp.dbl);
-    }
-
-    private double OCVmodel(double SoC, double volts, double temperature) {
-        //based on the model and the fit in OCData2020_05_17Analyse.xlsx
-        double a = 0.696993346051809;
-        double b = 0.898293282771827;
-        double c = 0.682268134515503;
-        double d = 0.0176540718170829;
-        double f = 0.00063556;
-        double aP = 0.445338179227382;
-        double bP = 4.28440915656331;
-        double aN = 0.0832;
-        double bN = 0.385;
-        double xC = SoC / 100.0;
-        double xP = b - a * xC;
-        double xN = c * xC + d;
-        double vModel = bP - aP * xP - aN * Math.pow(xN, -bN) + f * (temperature - 25);
-        double errorV = volts - vModel;
-        if (Math.abs(errorV) < 0.01) {
-            SoC = 100 * xC * (1 + errorV);
-        } else {
-            if (errorV > 0) SoC = 100 * xC * 1.01;
-            else SoC = 100 * xC * 0.99;
-        }
-        return SoC;
-    }
-
     private void iniComputations() {
-        if (okData) {
-            m_Odo.dbl = c_Odo.dbl;
-            p_Odo.dbl = c_Odo.dbl;
-            p_SoC.dbl = c_SoC2.dbl;
-            p_AmpsCal.dbl = c_AmpsCal.dbl;
-            mp_AmpsCal.dbl = p_AmpsCal.dbl;
-            m_AmpsAvg.dbl = c_AmpsCal.dbl;
-            d_AhCal.dbl = 0;
-            p_Speed.dbl = c_Speed0.dbl;
+        m_Odo.dbl = c_Odo.dbl;
+        p_Odo.dbl = c_Odo.dbl;
+        c_kmTest.dbl = 5;
+        m_kmTest.dbl = 5;
+        p_Amps.dbl = c_AmpsCal.dbl;
+        mp_Amps.dbl = c_AmpsCal.dbl;
+        d_AhCal.dbl = 0;
+        p_Speed.dbl = c_Speed0.dbl;
+        m_OCtimer.dbl = 0;
 
-            m_CellAhmin.volts = b_BatVmin.dbl;
-            m_CellAhmin.temperature = b_BatTmin.dbl;
-            m_CellAhmin.SoC = c_SoC1.dbl;
+        b_Ah.Whkm = c_Ah.Whkm;
+        m_Ah.Whkm = c_Ah.Whkm;
+        t_Ah.Whkm = c_Ah.Whkm;
+        bmu_Ah.Whkm = c_Ah.Whkm;
+        nmc_Ah.Whkm = c_Ah.Whkm;
 
-            m_CellAhmax.volts = b_BatVmax.dbl;
-            m_CellAhmax.temperature = b_BatTmax.dbl;
-            m_CellAhmax.SoC = c_SoC1.dbl;
+        b_Whkm.dbl = c_Ah.Whkm;
+        m_Whkm.dbl = c_Ah.Whkm;
 
-            c_AhRem.dbl = c_SoC2.dbl * c_CapAh.dbl / 100.0;
-            b_AhRem.dbl = c_AhRem.dbl;
-            m_AhRem.dbl = c_AhRem.dbl;
-            c_WhRem.dbl = c_AhRem.dbl * (b_Volts.dbl + 320) / 2.0;
-            b_WhRem.dbl = c_WhRem.dbl;
-            m_WhRem.dbl = c_WhRem.dbl;
-            t_WhReq.dbl = c_WhRem.dbl;
+        t_Ah.cap = c_Ah.cap;
+        t_Ah.rem = c_Ah.rem;
 
-            c_CapWh.dbl = c_CapAh.dbl * b_Vavg;
-            computeCarRR();
+        c_RRtest.dbl = c_Ah.RR();
 
-            c_RRtest.dbl = c_RR.dbl;
-            b_RR.dbl = c_RR.dbl;
-            m_RR.dbl = c_RR.dbl;
+        c_Speed0Avg.dbl = 20;
+        c_SpdAvgRR.dbl = c_Speed0Avg.dbl;
 
-            b_Whkm.dbl = c_Whkm.dbl;
-            m_Whkm.dbl = c_Whkm.dbl;
+        b_Wavg.dbl = c_Ah.Whkm * c_Speed0Avg.dbl;
+        m_Wavg.dbl = b_Wavg.dbl;
 
-            computeAuxW();
+        computeAuxW();
+        b_WavgRR.dbl = b_Wavg.dbl - m_AuxW.dbl;
+        m_WavgRR.dbl = b_WavgRR.dbl;
 
-            b_Wavg.dbl = c_Whkm.dbl * c_Speed0Avg.dbl;
-            m_Wavg.dbl = b_Wavg.dbl;
-            b_WMovAvg.dbl = b_Wavg.dbl - m_AuxW.dbl;
-            m_WMovAvg.dbl = b_Wavg.dbl - m_AuxW.dbl;
-            b_WhkmAux.dbl = (b_WMovAvg.dbl + m_AuxW.dbl) / c_Speed0Avg.dbl;
-            m_WhkmAux.dbl = (m_WMovAvg.dbl + m_AuxW.dbl) / c_Speed0Avg.dbl;
+        t_Speed.dbl = c_SpdAvgRR.dbl;
 
-            c_SpdAvgRR.dbl = c_Speed0Avg.dbl;
-            b_WavgRR.dbl = b_WMovAvg.dbl;
-            m_WavgRR.dbl = b_WMovAvg.dbl;
+        boolean found = false;
+        double SoC = 0;
+        double rem;
+        if (i_RemAh.dbl > 0) {
+            if ((currentTimeMillis() - i_Time) < 30000) {
+                nmc_Ah.rem = i_RemAh.dbl;
+                found = true;
+            } else if (m_SoCavg.dbl > 0) {
+                if (nmc_Ah.cap > 0) SoC = 100.0 * i_RemAh.dbl / nmc_Ah.cap;
+                if (Math.abs(m_SoCavg.dbl - SoC) < 5) {
+                    nmc_Ah.rem = i_RemAh.dbl;
+                    found = true;
+                }
+            } else if (bmu_Ah.cap > 0 && bmu_Ah.rem > 0) {
+                rem = nmc_Ah.cap + bmu_Ah.cap - bmu_Ah.rem;
+                if (Math.abs(i_RemAh.dbl - rem) < 5) {
+                    nmc_Ah.rem = i_RemAh.dbl;
+                    found = true;
+                }
+            } else if (c_Ah.cap > 0 && c_Ah.rem > 0) {
+                rem = nmc_Ah.cap - c_Ah.cap + c_Ah.rem;
+                if (Math.abs(i_RemAh.dbl - rem) < 5) {
+                    nmc_Ah.rem = i_RemAh.dbl;
+                    found = true;
+                }
+            }
+        } else {
+            if (bmu_Ah.cap > 0 && bmu_Ah.rem > 0) {
+                nmc_Ah.rem = nmc_Ah.cap - bmu_Ah.used();
+            } else if (c_Ah.cap > 0 && c_Ah.rem > 0) {
+                nmc_Ah.rem = nmc_Ah.cap - c_Ah.used();
+            } else if (m_SoCavg.dbl > 0) {
+                nmc_Ah.rem = m_SoCavg.dbl * nmc_Ah.cap / 100.0;
+            }
+        }
 
-            e_N.dbl = m_Error.dbl * c_Speed0Avg.dbl / 3.6;
-            e_Watts.dbl = e_N.dbl * c_Speed0Avg.dbl / 3.6;
+        if (i_Chem.equals("NMC")) {
+            b_Ah.cap = nmc_Ah.cap;
+            b_Ah.rem = nmc_Ah.rem;
+        } else {
+            b_Ah.cap = c_Ah.cap;
+            b_Ah.rem = c_Ah.rem;
+        }
 
-            c_Mass.dbl = 1120 + i_Load.dbl;
-            c_Roll.dbl = 9.89 * 0.018 * c_Mass.dbl;
+        if (c_Ah.cap == b_Ah.cap && c_Ah.rem > 0) {
+            b_CapEst.dbl = b_Ah.cap * b_Ah.rem / c_Ah.rem;
+        } else {
+            b_CapEst.dbl = -1;
+        }
 
-            m_OCtimer.dbl = 0;
+        m_Ah.cap = b_Ah.cap;
+        m_Ah.rem = b_Ah.rem;
 
+        m_Error.dbl = 10;
+        e_N.dbl = m_Error.dbl * c_Speed0Avg.dbl / 3.6;
+        e_Watts.dbl = e_N.dbl * c_Speed0Avg.dbl / 3.6;
 
-            m_CapStep = 0;
-            m_CapSoCUsed.dbl = 100 - c_SoC1.dbl;
-            if (m_CapSoCUsed.dbl < 0 || m_CapSoCUsed.dbl > 100) m_CapSoCUsed.dbl = 0;
-            m_CapAhUsed.dbl = c_CapAh.dbl * (m_CapSoCUsed.dbl) / 100.0;
+        c_Mass.dbl = 1120 + i_Load.dbl;
+        c_Roll.dbl = 9.89 * 0.018 * c_Mass.dbl;
 
+        stepCap1 = 0;
+        stepCap2 = 0;
+
+        pause1 = false;
+        p1_Ah.dbl = 0;
+        p1_SoC.dbl = 0;
+        p2_Ah.dbl = 0;
+        p2_SoC.dbl = 0;
+        p12_CapAh.dbl = 0;
+
+        if (c_Ah.cap > 0 && c_Ah.rem > 0 && c_Ah.Whkm > 0 && m_SoCavg.dbl > -1 && b_SoC2.dbl > -1 && c_Odo.dbl > 0) {
+            if (i_Chem.equals("NMC") && !found) {
+                CharSequence text = "Please check the remaining Ah" +
+                        "OBDZero was not able to find a good value.";
+                int duration = Toast.LENGTH_LONG;
+                Toast toast = Toast.makeText(this.getApplicationContext(), text, duration);
+                toast.show();
+            }
             iniComputing = false;
             runComputing = true;
             btnFour.setBackgroundColor(clrDarkGreen);
             updateInfo("app:Calculations started");
         }
+
     }
 
     private void doComputations() {
@@ -2342,6 +2353,8 @@ public class MainActivity extends AppCompatActivity {
 
         if (d_Second > 0.5) {
 
+            updateLowAmpTimer();
+
             computeAuxW();
 
             computeAccW();
@@ -2350,47 +2363,60 @@ public class MainActivity extends AppCompatActivity {
 
             if (c_Speed0.dbl > 0 && !errorAC) {
                 m_Watts.dbl = computeModel(c_Speed0.dbl, m_AccW.dbl, m_AuxW.dbl);
-                if (d_Second < 9)
-                    m_Error.dbl += 0.00002 * d_Second * (b_Watts.dbl - m_Watts.dbl); // The difference between the effect reported by the car and the effect computed by the model
+                if (d_Second < 10)
+                    // The difference between the effect reported by the car and the effect computed by the model
+                    m_Error.dbl += 0.00002 * d_Second * (c_WattsCal.dbl - m_Watts.dbl);
                 if (m_Error.dbl > 100) m_Error.dbl = 100;
                 if (m_Error.dbl < -50) m_Error.dbl = -50;
-                if (b_Volts.dbl > 0) m_AmpsCal.dbl = m_Watts.dbl / b_Volts.dbl;
+                if (b_Volts.dbl > 0) m_Amps.dbl = m_Watts.dbl / b_Volts.dbl;
             } else {
-                m_Watts.dbl = b_Watts.dbl;
-                m_AmpsCal.dbl = c_AmpsCal.dbl;
+                m_Amps.dbl = c_AmpsCal.dbl;
+                m_Watts.dbl = c_WattsCal.dbl;
             }
             e_N.dbl = m_Error.dbl * c_Speed0Avg.dbl / 3.6;
             e_Watts.dbl = e_N.dbl * c_Speed0Avg.dbl / 3.6;
 
-            computeSpeedWhkm();
-
-            computeWindSpeed();
-
             computeAh();
 
-            computeWh();
+            computeSpeedWhkm();
+
+            computeRRWhkm();
+
+            checkRR();
+
+            computeWind();
 
             computeDistances();
 
-            computeCarRR();
+            computeBestSpeed();
 
-            computeRR();
+            processCap1();
 
-            computeSuggestedSpeed();
+            processCap2();
 
-            updateLowATimer();
+            processSlowCharge();
 
-            processCapacity();
+            if (c_Ah.cap == b_Ah.cap && c_Ah.rem > 0) {
+                b_CapEst.dbl = b_Ah.cap * b_Ah.rem / c_Ah.rem;
+            } else {
+                b_CapEst.dbl = -1;
+            }
 
             if (c_Gear.in() == 68 || c_Gear.in() == 131 || c_Gear.in() == 50) {
                 p_Speed.dbl = c_Speed0.dbl;
             } else {
                 p_Speed.dbl = 0;
             }
-            p_Odo.dbl = c_Odo.dbl;
-            p_SoC.dbl = c_SoC2.dbl;
             p_Time = time;
 
+        }
+    }
+
+    private void updateLowAmpTimer() {
+        if (c_AmpsCal.dbl > -1.0 && c_AmpsCal.dbl < 1.0) {
+            if (d_Second < 10) m_OCtimer.dbl += d_Second / 60.0;
+        } else {
+            m_OCtimer.dbl = 0;
         }
     }
 
@@ -2410,7 +2436,7 @@ public class MainActivity extends AppCompatActivity {
         }
         auxW += h_Amps.dbl * b_Volts.dbl;
         if (errorAC) {
-            ac_Watts.dbl = b_Watts.dbl - computeModel(c_Speed0.dbl, m_AccW.dbl, auxW);
+            ac_Watts.dbl = c_WattsCal.dbl - computeModel(c_Speed0.dbl, m_AccW.dbl, auxW);
             if (ac_Watts.dbl < 0) ac_Watts.dbl = 0;
             if (b_Volts.dbl > 0) ac_Amps.dbl = ac_Watts.dbl / b_Volts.dbl;
         }
@@ -2441,76 +2467,93 @@ public class MainActivity extends AppCompatActivity {
         return auxW + c_Roll.dbl * m_v + m_Error.dbl * m_v * m_v + c_Drag.dbl * m_v * m_v * m_v + accW;
     }
 
+    private void computeAh() {
+        if (d_Second < 180) {
+            d_AhCal.dbl = (c_AmpsCal.dbl + p_Amps.dbl) * d_Hour / 2.0;
+            m_Ah.rem -= ((m_Amps.dbl + mp_Amps.dbl) * d_Hour / 2.0);
+        } else {
+            d_AhCal.dbl = (c_AmpsCal.dbl + p_Amps.dbl) * 180.0 / 3600.0 / 2.0;
+            m_Ah.rem -= ((m_Amps.dbl + mp_Amps.dbl) * 180.0 / 3600.0 / 2.0);
+        }
+        p_Amps.dbl = c_AmpsCal.dbl;
+        mp_Amps.dbl = m_Amps.dbl;
+
+        c_Ah.rem -= d_AhCal.dbl;
+        b_Ah.rem -= d_AhCal.dbl;
+        bmu_Ah.rem -= d_AhCal.dbl;
+
+        if (m_OCtimer.dbl > 10.0) {
+            if (m_SoCavg.dbl > -1 && m_SoCavg.dbl < 112) {
+                nmc_Ah.rem = m_SoCavg.dbl * nmc_Ah.cap / 100.0;
+            }
+        } else {
+            nmc_Ah.rem -= d_AhCal.dbl;
+        }
+    }
+
     private void computeSpeedWhkm() {
-        if (c_Gear.in() == 68 || c_Gear.in() == 131 || c_Gear.in() == 50 && d_Second < 10) {
-            double aAdd = 0.004 * d_Second;
+        if ((c_Gear.in() == 68 || c_Gear.in() == 131 || c_Gear.in() == 50) && d_Second < 10) {
+            double aAdd = 0.002 * d_Second;
             double aKeep = 1 - aAdd;
             c_SpdShnAvg.dbl = aKeep * c_SpdShnAvg.dbl + aAdd * c_SpdShown.dbl;
             if (c_SpdShnAvg.dbl < 1) c_SpdShnAvg.dbl = 1;
             c_Speed0Avg.dbl = aKeep * c_Speed0Avg.dbl + aAdd * c_Speed0.dbl;
             if (c_Speed0Avg.dbl < 1) c_Speed0Avg.dbl = 1;
-            m_AccWavg.dbl = aKeep * m_AccWavg.dbl + aAdd * m_AccW.dbl; //compute the average watts (returned) used to (de)accelerate.
-            b_Wavg.dbl = aKeep * b_Wavg.dbl + aAdd * b_Watts.dbl; //compute the average measured watts while in drive.
+            b_Wavg.dbl = aKeep * b_Wavg.dbl + aAdd * c_WattsCal.dbl; //compute the average measured watts while in drive.
             m_Wavg.dbl = aKeep * m_Wavg.dbl + aAdd * m_Watts.dbl; //compute the average model watts while in drive.
-            b_WMovAvg.dbl = aKeep * b_WMovAvg.dbl + aAdd * (b_Watts.dbl - m_AuxW.dbl); //compute the average model watts while in drive.
-            m_WMovAvg.dbl = aKeep * m_WMovAvg.dbl + aAdd * (m_Watts.dbl - m_AuxW.dbl); //compute the average model watts while in drive.
-            b_WAvgAux.dbl = b_WMovAvg.dbl + m_AuxW.dbl; //compute the average model watts while in drive.
-            m_WAvgAux.dbl = m_WMovAvg.dbl + m_AuxW.dbl; //compute the average model watts while in drive.
-            if (c_Speed0Avg.dbl > 0) {
-                b_Whkm.dbl = b_Wavg.dbl / c_Speed0Avg.dbl;
-                m_Whkm.dbl = m_Wavg.dbl / c_Speed0Avg.dbl;
-                b_WhkmAux.dbl = b_WAvgAux.dbl / c_Speed0Avg.dbl;
-                m_WhkmAux.dbl = m_WAvgAux.dbl / c_Speed0Avg.dbl;
-            }
+            b_Whkm.dbl = b_Wavg.dbl / c_Speed0Avg.dbl;
+            m_Whkm.dbl = m_Wavg.dbl / c_Speed0Avg.dbl;
         }
     }
 
-
-    private void computeWindSpeed() {
-        double m_v = c_Speed0Avg.dbl / 3.6; //Convert to m/s.
-        if (c_Drag.dbl > 0)
-            m_Wind.dbl = Math.cbrt((m_Error.dbl * m_v * m_v / c_Drag.dbl + m_v * m_v * m_v)) - m_v;
+    private void computeRRWhkm() {
+        if ((c_Gear.in() == 68 || c_Gear.in() == 131 || c_Gear.in() == 50) && d_Second < 10) {
+            double aAdd = 0.0002 * d_Second;
+            double aKeep = 1 - aAdd;
+            c_SpdAvgRR.dbl = aKeep * c_SpdAvgRR.dbl + aAdd * c_Speed0.dbl;
+            if (c_SpdAvgRR.dbl < 1) c_SpdAvgRR.dbl = 1;
+            b_WavgRR.dbl = aKeep * b_WavgRR.dbl + aAdd * (c_WattsCal.dbl - m_AuxW.dbl); //compute the average measured watts while in drive.
+            m_WavgRR.dbl = aKeep * m_WavgRR.dbl + aAdd * (m_Watts.dbl - m_AuxW.dbl); //compute the average model watts while in drive.
+            b_Ah.Whkm = (b_WavgRR.dbl + m_AuxW.dbl) / c_SpdAvgRR.dbl;
+            m_Ah.Whkm = (m_WavgRR.dbl + m_AuxW.dbl) / c_SpdAvgRR.dbl;
+            bmu_Ah.Whkm = b_Ah.Whkm;
+            nmc_Ah.Whkm = b_Ah.Whkm;
+        }
     }
 
-    private void computeAh() {
-        c_AhRem.dbl = c_SoC2.dbl * c_CapAh.dbl / 100.0;
-        if (d_Second < 180) {
-            d_AhCal.dbl = (c_AmpsCal.dbl + p_AmpsCal.dbl) * d_Hour / 2.0;
-            b_AhRem.dbl -= d_AhCal.dbl;
-            m_AhRem.dbl -= (m_AmpsCal.dbl + mp_AmpsCal.dbl) * d_Hour / 2.0;
+    private void checkRR() {
+        if (i_RangeUnits.equals("km") && m_AuxW.dbl < 500) {
+            double test;
+            if (b_Ah.Whkm > 0) c_RRtest.dbl = c_Ah.remWh10() / b_Ah.Whkm;
+            if (c_Ah.RR() > 0 && c_RRtest.dbl > 0) test = c_RRtest.dbl / c_Ah.RR();
+            else test = 1.0;
+            checkRRMiles = test > 0.58 && test < 0.68;
         } else {
-            d_AhCal.dbl = (c_AmpsCal.dbl + p_AmpsCal.dbl) * 180 / 3600.0 / 2.0;
-            b_AhRem.dbl = c_AhRem.dbl;
-            m_AhRem.dbl = c_AhRem.dbl;
+            checkRRMiles = false;
         }
-        p_AmpsCal.dbl = c_AmpsCal.dbl;
-        mp_AmpsCal.dbl = m_AmpsCal.dbl;
-        if (c_SoC2.dbl > 0) b_CapAhCheck.dbl = 100 * b_AhRem.dbl / c_SoC2.dbl;
     }
 
-    private void computeWh() {
-        double b_V0 = 0.117 * b_Temp.dbl - 0.177 * c_AmpsCal.dbl + 320.1;
-        double c_VRem = (b_Volts.dbl + b_V0) / 2.0;
-        c_WhRem.dbl = c_VRem * c_AhRem.dbl;
-        b_WhRem.dbl = c_VRem * b_AhRem.dbl;
-        m_WhRem.dbl = c_VRem * m_AhRem.dbl;
-        double b_V100 = 0.117 * b_Temp.dbl - 0.177 * c_AmpsCal.dbl + 356.8;
-        c_CapWh.dbl = c_CapAh.dbl * (b_V100 + b_V0) / 2.0;
-        c_WhRem10.dbl = c_WhRem.dbl - 0.1 * c_CapWh.dbl;
+
+    private void computeWind() {
+        double v = c_Speed0Avg.dbl / 3.6; //Convert to m/s.
+        if (c_Drag.dbl > 0)
+            m_Wind.dbl = (Math.cbrt(-(c_Drag.dbl * c_Drag.dbl) * (c_Roll.dbl * v + m_AuxW.dbl - m_Wavg.dbl)) - c_Drag.dbl * v) / c_Drag.dbl;
     }
+
 
     private void computeDistances() {
         if (d_Second < 180) { // If there is less than 3 minutes since the last step then assume no data has been lost.
             double dx = (c_Speed0.dbl + p_Speed.dbl) * d_Hour / 2.0;
-            m_Odo.dbl += dx;
-            t_km.dbl -= dx; //True distance to the next charging station is reduced by the distance traveled during hours
-            m_km.dbl += dx; //test distance since charging, adjusted by the error in the car speed
+            m_Odo.dbl += dx;//The odometer increased by the true distance traveled during d_hours
+            t_km.dbl -= dx; //The distance to the next charging station is reduced by the true distance traveled during d_hours
+            m_km.dbl += dx; //True distance since starting
             if (i_OdoUnits.equals("km")) {
                 c_kmTest.dbl += c_Odo.dbl - p_Odo.dbl;
+                p_Odo.dbl = c_Odo.dbl;
                 m_kmTest.dbl += dx;
                 double test = 1;
                 if (m_kmTest.dbl > 0) test = c_kmTest.dbl / m_kmTest.dbl;
-                checkOdoUnits = test > 0.58 && test < 0.68;
+                checkOdoMiles = test > 0.58 && test < 0.68;
             }
         } else {
             m_km.dbl += c_Odo.dbl - m_Odo.dbl;
@@ -2520,348 +2563,351 @@ public class MainActivity extends AppCompatActivity {
         if (t_km.dbl < 0) t_km.dbl = 0;
     }
 
-    private void computeCarRR() {
-        //the cars rest range and Wh/km based on the reported rest range
-        if (c_RestRange.dbl > 0 && c_RestRange.dbl < 255) {
-            c_RR.dbl = c_RestRange.dbl;
-            c_Whkm.dbl = c_WhRem10.dbl / c_RR.dbl;
-        } else {
-            if (c_Whkm.dbl > 0) c_RR.dbl = c_WhRem10.dbl / c_Whkm.dbl;
-        }
-    }
-
-    private void computeRR() {
-        if (c_Gear.in() == 68 || c_Gear.in() == 131 || c_Gear.in() == 50 && d_Second < 10) {
-            double aAdd = 0.0005 * d_Second;
-            double aKeep = 1 - aAdd;
-            b_WavgRR.dbl = aKeep * b_WavgRR.dbl + aAdd * (b_Watts.dbl - m_AuxW.dbl); //compute the average measured watts while in drive.
-            m_WavgRR.dbl = aKeep * m_WavgRR.dbl + aAdd * (m_Watts.dbl - m_AuxW.dbl); //compute the average model watts while in drive.
-            c_SpdAvgRR.dbl = aKeep * c_SpdAvgRR.dbl + aAdd * c_Speed0.dbl;
-            if (c_SpdAvgRR.dbl < 1) c_SpdAvgRR.dbl = 1;
-            double bWhkm = (b_WavgRR.dbl + m_AuxW.dbl) / c_SpdAvgRR.dbl;
-            double mWhkm = (m_WavgRR.dbl + m_AuxW.dbl) / c_SpdAvgRR.dbl;
-            if (bWhkm > 0) {
-                c_RRtest.dbl = c_WhRem10.dbl / bWhkm;
-                b_RR.dbl = (b_WhRem.dbl - 0.1 * c_CapWh.dbl) / bWhkm;
-            }
-            if (mWhkm > 0) m_RR.dbl = (m_WhRem.dbl - 0.1 * c_CapWh.dbl) / mWhkm;
-            if (i_RangeUnits.equals("km")) {
-                double test = 1;
-                if (c_RR.dbl > 0) test = c_RRtest.dbl / c_RR.dbl;
-                checkRangeUnits = h_Level.in() == 7 && m_AuxW.dbl < 500 && test > 0.58 && test < 0.68;
-            }
-        }
-    }
-
-    private void computeSuggestedSpeed() {
+    private void computeBestSpeed() {
         if (t_km.dbl > 0) {
-            t_RR.dbl = t_km.dbl + i_Margin.dbl;
-            c_Margin.dbl = c_RR.dbl - t_km.dbl; //RR minus the true distance to the next charging station
-        } else if (c_RR.dbl > 0) {
-            t_km.dbl = 0;
-            t_RR.dbl = c_RR.dbl;
-            c_Margin.dbl = c_RR.dbl;
+            t_reqkm.dbl = t_km.dbl + i_Margin.dbl;
+            t_Margin.dbl = c_Ah.RR() - t_km.dbl; //RR minus the true distance to the next charging station
+        } else if (c_Ah.RR() > 0) {
+            t_reqkm.dbl = c_Ah.RR();
+            t_Margin.dbl = c_Ah.RR();
         } else {
-            t_km.dbl = 0;
-            t_RR.dbl = 0;
-            c_Margin.dbl = 0;
+            t_reqkm.dbl = 0;
+            t_Margin.dbl = 0;
+        }
+
+        t_Ah.cap = c_Ah.cap;
+        t_Ah.rem = c_Ah.rem;
+
+        t_W.dbl = computeModel(t_Speed.dbl, 0, m_AuxW.dbl);
+        if (t_Speed.dbl > 0) t_Ah.Whkm = t_W.dbl / t_Speed.dbl;
+
+        double v = t_Speed.dbl / 3.6;
+        double a = c_Drag.dbl * v * v * v + m_Error.dbl * v * v + c_Roll.dbl * v - m_AuxW.dbl;
+        t_Slope.dbl = -t_Ah.remWh10() * (2 * c_Drag.dbl * v * v * v + m_Error.dbl * v * v - m_AuxW.dbl) / (a * a);
+
+
+        if (t_Ah.RR() > 0 && t_reqkm.dbl > 0) {
+            if (t_Ah.RR() > t_reqkm.dbl || t_Slope.dbl > 0) {
+                t_Speed.dbl += 0.02 * d_Second * Math.abs(t_Ah.RR() - t_reqkm.dbl);
+            } else {
+                t_Speed.dbl -= 0.02 * d_Second * Math.abs(t_Ah.RR() - t_reqkm.dbl);
+            }
+        } else {
+            if (t_Slope.dbl > 0) {
+                t_Speed.dbl += 0.02 * d_Second;
+            } else {
+                t_Speed.dbl -= 0.02 * d_Second;
+            }
         }
 
         if (t_Speed.dbl < 10) t_Speed.dbl = 10;
         else if (t_Speed.dbl > 130) t_Speed.dbl = 130;
 
         t_W.dbl = computeModel(t_Speed.dbl, 0, m_AuxW.dbl);
-        double hours = t_RR.dbl / (t_Speed.dbl);
-        if (hours > 0) {
-            t_WhReq.dbl = t_W.dbl * hours;
-        } else {
-            t_WhReq.dbl = 0;
-        }
-
-        double m_v = t_Speed.dbl / 3.6;
-        double slope = 2 * c_Drag.dbl * m_v + m_Error.dbl - m_AuxW.dbl / (m_v * m_v);
-
-        if (c_Margin.dbl > 0) {
-            if (c_WhRem10.dbl > t_WhReq.dbl || slope < 0) {
-                t_Speed.dbl += 0.00008 * d_Second * Math.abs(c_WhRem10.dbl - t_WhReq.dbl);
-            } else {
-                t_Speed.dbl -= 0.00008 * d_Second * Math.abs(c_WhRem10.dbl - t_WhReq.dbl);
-            }
-        } else {
-            if (slope < 0) {
-                t_Speed.dbl += 0.00008 * d_Second;
-            } else {
-                t_Speed.dbl -= 0.00008 * d_Second;
-            }
-        }
-
-        t_W.dbl = computeModel(t_Speed.dbl, 0, m_AuxW.dbl);
-        t_Whkm.dbl = t_W.dbl / t_Speed.dbl;         //Wh/km when the speed of the car is t_Speed
+        t_Ah.Whkm = t_W.dbl / t_Speed.dbl;
     }
 
-    private void updateLowATimer() {
-        m_AmpsAvg.dbl = 0.8 * m_AmpsAvg.dbl + 0.2 * c_AmpsCal.dbl;
-        if (m_AmpsAvg.dbl > -0.1 && m_AmpsAvg.dbl < 1) {
-            if (d_Second < 10) m_OCtimer.dbl += d_Second / 60.0;
-        } else {
-            m_OCtimer.dbl = 0;
+
+    private void processCap1() {
+        switch (stepCap1) {
+            case 0:
+                if (b_Ah.used() > 17.5) stepCap1 = 1;
+                break;
+            case 1:
+                iniCap1();
+                if (b_Ah.used() > 20) stepCap1 = 2;
+                break;
+            case 2:
+                if (m_OCtimer.dbl > 10) computeCap1();
+                if (m_OCtimer.dbl > 15) stepCap1 = 3;
+                break;
+            case 3:
+                computeCells1();
+                if (Math.abs(c_AmpsCal.dbl) > 2) stepCap1 = 0;
+                break;
+            case 4:
+                break;
+            default:
+                stepCap1 = 0;
+                break;
         }
     }
 
-    private void updateCapacity() {
-        m_Cap1Ahavg.dbl = 0;
-        m_Cap1AhavgDisplay.dbl = 0;
-        m_CapSoCUsed.dbl = 100 - b_BMUSoC.dbl;
-        m_CapAhUsed.dbl = b_BMUCapAh.dbl - b_BMURemAh.dbl;
+    private void iniCap1() {
+        b_Cellmax.Ah1 = 0;
+        b_Cellavg.Ah1 = 0;
+        b_Cellmin.Ah1 = 0;
+        for (Cell aCell : listCells) {
+            aCell.Ah1 = 0;
+        }
+    }
 
-        if (cellsData) {
-            m_CellAhmax.module = b_CellVmax.module;
-            m_CellAhmax.cell = b_CellVmax.cell;
-            m_CellAhmax.volts = b_CellVmax.volts;
-            m_CellAhmax.temperature = b_CellVmax.temperature;
-            m_CellAhmax.SoC = b_CellVmax.SoC;
-            m_CellAhmax.p_SoC = b_CellVmax.SoC;
-            m_CellAhmax.capAh1 = 0;
-            m_CellAhmax.SoCsum = 0;
-            m_CellAhmax.capAh2 = 0;
-            m_CellAhmin.module = b_CellVmin.module;
-            m_CellAhmin.cell = b_CellVmin.cell;
-            m_CellAhmin.volts = b_CellVmin.volts;
-            m_CellAhmin.temperature = b_CellVmin.temperature;
-            m_CapTemp.dbl = b_CellVmin.temperature;
-            m_CellAhmin.SoC = b_CellVmin.SoC;
-            m_CellAhmin.p_SoC = b_CellVmin.SoC;
-            m_CellAhmin.capAh1 = 0;
-            m_CellAhmin.SoCsum = 0;
-            m_CellAhmin.capAh2 = 0;
-            m_CapAhsum.dbl = 0;
+    private void computeCap1() {
+        if (100 - b_Cellmax.SoC > 0)
+            b_Cellmax.Ah1 = 100 * b_Ah.used() / (100 - b_Cellmax.SoC);
+        if (100 - b_Cellavg.SoC > 0)
+            b_Cellavg.Ah1 = 100 * b_Ah.used() / (100 - b_Cellavg.SoC);
+        if (100 - b_Cellmin.SoC > 0)
+            b_Cellmin.Ah1 = 100 * b_Ah.used() / (100 - b_Cellmin.SoC);
+        m_CapTemp.dbl = 0.99 * m_CapTemp.dbl + 0.01 * b_Temp.dbl;
+    }
+
+    private void computeCells1() {
+        if (cellsData)
             for (Cell aCell : listCells) {
-                aCell.capAh1 = 0;
+                if (100 - aCell.SoC > 0) {
+                    aCell.Ah1 = 100 * b_Ah.used() / (100 - aCell.SoC);
+                }
+            }
+    }
+
+    private void processCap2() {
+        switch (stepCap2) {
+            case 0:
+                iniCap2();
+                if (b_SoC1.dbl < 20 && b_SoC2.dbl < 20) stepCap2 = 1;
+                break;
+            case 1:
+                iniCap2();
+                if (b_SoC1.dbl < 15 && b_SoC2.dbl < 15) stepCap2 = 2;
+                break;
+            case 2:
+                iniCap2();
+                if (m_OCtimer.dbl > 30) {
+                    stepCap2 = 3;
+                }
+                break;
+            case 3:
+                updateSums2();
+                if (c_AmpsCal.dbl < -1) stepCap2 = 4;
+                break;
+            case 4:
+                updateSums2();
+                if ((b_SoC1.dbl > 98 || b_SoC2.dbl > 98) && c_AmpsCal.dbl > -0.1) stepCap2 = 5;
+                break;
+            case 5:
+                updateSums2();
+                if (m_OCtimer.dbl > 0) stepCap2 = 6;
+                break;
+            case 6:
+                updateSums2();
+                if (m_OCtimer.dbl > 25) stepCap2 = 7;
+                break;
+            case 7:
+                updateSums2();
+                if (m_OCtimer.dbl > 10)computeCapacities2();
+                if (m_OCtimer.dbl > 30) stepCap2 = 8;
+                break;
+            case 8:
+                computeCells2();
+                if (Math.abs(c_AmpsCal.dbl) > 2) stepCap2 = 0;
+                break;
+            case 9:
+                break;
+            default:
+                stepCap2 = 0;
+                break;
+        }
+    }
+
+    private void iniCap2() {
+        m_CAh2max = b_Cellmax;
+        m_CAh2avg = b_Cellavg;
+        m_CAh2min = b_Cellmin;
+        m_CAh2max.p_SoC = m_CAh2max.SoC;
+        m_CAh2avg.p_SoC = m_CAh2avg.SoC;
+        m_CAh2min.p_SoC = m_CAh2min.SoC;
+        m_CAh2max.SoCsum = 0;
+        m_CAh2avg.SoCsum = 0;
+        m_CAh2min.SoCsum = 0;
+        m_CAh2max.Ah2 = 0;
+        m_CAh2avg.Ah2 = 0;
+        m_CAh2min.Ah2 = 0;
+        m_Ah.sum = 0;
+        if (cellsData) {
+            for (Cell aCell : listCells) {
                 aCell.SoCsum = 0;
                 aCell.p_SoC = aCell.SoC;
-                aCell.capAh2 = 0;
+                aCell.Ah2 = 0;
             }
-        }
-
-        p_BatSoCmax.dbl = b_BatSoCmax.dbl;
-        p_BatSoCmin.dbl = b_BatSoCmin.dbl;
-        p_BatSoCavg.dbl = b_BatSoCavg.dbl;
-        m_BatSummax.dbl = 0;
-        m_BatSummin.dbl = 0;
-        m_BatSumavg.dbl = 0;
-    }
-
-    private void computeCapacities1() {
-        m_CapSoCUsed.dbl = 100 - b_BMUSoC.dbl;
-        m_CapAhUsed.dbl = b_BMUCapAh.dbl - b_BMURemAh.dbl;
-        m_CapTemp.dbl = 0.99 * m_CapTemp.dbl + 0.01 * m_CellAhmin.temperature;
-        if (100 - b_BatSoCmax.dbl > 0)
-            m_BatAh1max.dbl = 100 * m_CapAhUsed.dbl / (100 - b_BatSoCmax.dbl);
-        if (100 - b_BatSoCavg.dbl > 0)
-            m_BatAh1avg.dbl = 100 * m_CapAhUsed.dbl / (100 - b_BatSoCavg.dbl);
-        if (100 - b_BatSoCmin.dbl > 0)
-            m_BatAh1min.dbl = 100 * m_CapAhUsed.dbl / (100 - b_BatSoCmin.dbl);
-        if (cellsData) {
-            if (100 - m_CellAhmax.SoC > 0)
-                m_CellAhmax.capAh1 = 100 * m_CapAhUsed.dbl / (100 - m_CellAhmax.SoC);
-            if (100 - m_SoCavg.dbl > 0)
-                m_Cap1AhavgDisplay.dbl = 100 * m_CapAhUsed.dbl / (100 - m_SoCavg.dbl);
-            if (100 - m_CellAhmin.SoC > 0)
-                m_CellAhmin.capAh1 = 100 * m_CapAhUsed.dbl / (100 - m_CellAhmin.SoC);
-        } else {
-            m_Cap1AhavgDisplay.dbl = m_BatAh1avg.dbl;
-        }
-    }
-
-    private void storeCapacities1() {
-        if (cellsData) {
-            for (Cell aCell : listCells) {
-                if (100 - aCell.SoC > 0)
-                    aCell.capAh1 = 100 * m_CapAhUsed.dbl / (100 - aCell.SoC);
-            }
-            m_Cap1Ahmax.dbl = m_CellAhmax.capAh1;
-            if (100 - m_SoCavg.dbl > 0)
-                m_Cap1Ahavg.dbl = 100 * m_CapAhUsed.dbl / (100 - m_SoCavg.dbl);
-            m_Cap1Ahmin.dbl = m_CellAhmin.capAh1;
         }
     }
 
     private void updateSums2() {
         if (cellsData) {
-            double sumSum = 0;
-            int n = 0;
             for (Cell aCell : listCells) {
                 aCell.SoCsum += aCell.SoC - aCell.p_SoC;
                 aCell.p_SoC = aCell.SoC;
-                if (aCell.SoCsum > 0) {
-                    sumSum += aCell.SoCsum;
-                    n += 1;
-                }
-                if (m_CellAhmax.module == aCell.module && m_CellAhmax.cell == aCell.cell) {
-                    m_CellAhmax.volts = aCell.volts;
-                    m_CellAhmax.temperature = aCell.temperature;
-                    m_CellAhmax.SoC = aCell.SoC;
-                    m_CellAhmax.SoCsum += m_CellAhmax.SoC - m_CellAhmax.p_SoC;
-                    m_CellAhmax.p_SoC = m_CellAhmax.SoC;
-                }
-                if (m_CellAhmin.module == aCell.module && m_CellAhmin.cell == aCell.cell) {
-                    m_CellAhmin.volts = aCell.volts;
-                    m_CellAhmin.temperature = aCell.temperature;
-                    m_CellAhmin.SoC = aCell.SoC;
-                    m_CellAhmin.SoCsum += m_CellAhmin.SoC - m_CellAhmin.p_SoC;
-                    m_CellAhmin.p_SoC = m_CellAhmin.SoC;
-                }
+                if (aCell.module == m_CAh2max.module && aCell.cell == m_CAh2max.cell)
+                    m_CAh2max = aCell;
+                if (aCell.module == m_CAh2min.module && aCell.cell == m_CAh2min.cell)
+                    m_CAh2min = aCell;
             }
-            if (n > 0) m_Cap2SoCsum.dbl = sumSum / n;
+        } else {
+            m_CAh2max.SoC = b_Cellmax.SoC;
+            m_CAh2min.SoC = b_Cellmin.SoC;
+            m_CAh2max.SoCsum += m_CAh2max.SoC - m_CAh2max.p_SoC;
+            m_CAh2min.SoCsum += m_CAh2min.SoC - m_CAh2min.p_SoC;
+            m_CAh2max.p_SoC = m_CAh2max.SoC;
+            m_CAh2min.p_SoC = m_CAh2min.SoC;
         }
-        m_BatSummax.dbl += b_BatSoCmax.dbl - p_BatSoCmax.dbl;
-        m_BatSumavg.dbl += b_BatSoCavg.dbl - p_BatSoCavg.dbl;
-        m_BatSummin.dbl += b_BatSoCmin.dbl - p_BatSoCmin.dbl;
-        p_BatSoCmax.dbl = b_BatSoCmax.dbl;
-        p_BatSoCavg.dbl = b_BatSoCavg.dbl;
-        p_BatSoCmin.dbl = b_BatSoCmin.dbl;
-
-        m_CapAhsum.dbl -= d_AhCal.dbl;
-        m_CapTemp.dbl = 0.99 * m_CapTemp.dbl + 0.01 * m_CellAhmin.temperature;
+        m_CAh2avg.SoC = b_Cellavg.SoC;
+        m_CAh2avg.SoCsum += m_CAh2avg.SoC - m_CAh2avg.p_SoC;
+        m_CAh2avg.p_SoC = m_CAh2avg.SoC;
+        m_Ah.sum -= d_AhCal.dbl;
+        m_CapTemp.dbl = 0.99 * m_CapTemp.dbl + 0.01 * m_CAh2min.temperature;
     }
 
     private void computeCapacities2() {
-        if (m_BatSummax.dbl > 0 && m_CapAhsum.dbl > 0)
-            m_BatAh2max.dbl = 100 * m_CapAhUsed.dbl / (m_BatSummax.dbl);
-        if (m_BatSumavg.dbl > 0 && m_CapAhsum.dbl > 0)
-            m_BatAh2avg.dbl = 100 * m_CapAhUsed.dbl / (m_BatSumavg.dbl);
-        if (m_BatSummin.dbl > 0 && m_CapAhsum.dbl > 0)
-            m_BatAh2min.dbl = 100 * m_CapAhUsed.dbl / (m_BatSummin.dbl);
-        if (cellsData) {
-            if (m_CellAhmax.SoCsum > 0 && m_CapAhsum.dbl > 0)
-                m_CellAhmax.capAh2 = 100 * m_CapAhsum.dbl / m_CellAhmax.SoCsum;
-            if (m_CellAhmin.SoCsum > 0 && m_CapAhsum.dbl > 0)
-                m_CellAhmin.capAh2 = 100 * m_CapAhsum.dbl / m_CellAhmin.SoCsum;
-            m_Cap2AhavgDisplay.dbl = (m_CellAhmax.capAh2 + m_CellAhmin.capAh2) / 2.0;
-        } else {
-            m_Cap2AhavgDisplay.dbl = m_BatAh2avg.dbl;
-        }
+        if (m_CAh2max.SoCsum > 0 && m_Ah.sum > 0)
+            m_CAh2max.Ah2 = 100 * m_Ah.sum / (m_CAh2max.SoCsum);
+        if (m_CAh2avg.SoCsum > 0 && m_Ah.sum > 0)
+            m_CAh2avg.Ah2 = 100 * m_Ah.sum / (m_CAh2avg.SoCsum);
+        if (m_CAh2min.SoCsum > 0 && m_Ah.sum > 0)
+            m_CAh2min.Ah2 = 100 * m_Ah.sum / (m_CAh2min.SoCsum);
     }
 
-    private void storeCapacities2() {
+    private void computeCells2() {
         if (cellsData) {
-            double sumAh = 0;
+            double maxAh2 = 0;
+            double minAh2 = 200;
+            double sum = 0;
             int n = 0;
             for (Cell aCell : listCells) {
-                if (aCell.SoCsum > 0 && m_CapAhsum.dbl > 0) {
-                    aCell.capAh2 = 100 * m_CapAhsum.dbl / aCell.SoCsum;
-                    sumAh += aCell.capAh2;
-                    n += 1;
-                }
+                if (aCell.isFound)
+                    if (aCell.SoCsum > 0 && m_Ah.sum > 0) {
+                        aCell.Ah2 = 100.0 * m_Ah.sum / aCell.SoCsum;
+                        if (aCell.Ah2 > maxAh2) {
+                            maxAh2 = aCell.Ah2;
+                            m_CAh2max.module = aCell.module;
+                            m_CAh2max.cell = aCell.cell;
+                            m_CAh2max.volts = aCell.volts;
+                            m_CAh2max.Ah2 = aCell.Ah2;
+                            m_CAh2max.SoCsum = aCell.SoCsum;
+                        }
+                        if (aCell.Ah2 < minAh2) {
+                            minAh2 = aCell.Ah2;
+                            m_CAh2min.module = aCell.module;
+                            m_CAh2min.cell = aCell.cell;
+                            m_CAh2min.volts = aCell.volts;
+                            m_CAh2min.Ah2 = aCell.Ah2;
+                            m_CAh2min.SoCsum = aCell.SoCsum;
+                        }
+                        sum += aCell.Ah2;
+                        n += 1;
+                    }
             }
-            if (n > 0) m_Cap2Ahavg.dbl = sumAh / n;
-            m_Cap2AhavgDisplay.dbl = m_Cap2Ahavg.dbl;
-            m_Cap2Ahmax.dbl = m_CellAhmax.capAh2;
-            m_Cap2Ahmin.dbl = m_CellAhmin.capAh2;
-        } else {
-            m_Cap2AhavgDisplay.dbl = m_BatAh2avg.dbl;
+            if (n > 0) {
+                m_CAh2avg.Ah2 = sum / n;
+                if (m_CAh2avg.Ah2 > 0)
+                    m_CAh2avg.SoCsum = 100.0 * m_Ah.sum / m_CAh2avg.Ah2;
+            }
         }
     }
 
-    static String computeMinutesWithHeater() {
-        if (c_SoC1.dbl > 15) return decFix0.format(0.6 * (c_SoC1.dbl - 15) * c_CapAh.dbl / 3);
-        else return ("0");
+    public void processSlowCharge() {
+
+        if (!chargeFinished) {
+            if (c_ChargeVAC.dbl > 100 && c_AmpsCal.dbl < -0.5 && !isCharging) {
+                isCharging = true;
+                bmu_CapAh0.dbl = bmu_Ah.cap;
+                bmu_RemAh0.dbl = bmu_Ah.rem;
+                b_CapAh0.dbl = b_Ah.cap;
+                b_RemAh0.dbl = b_Ah.rem;
+                b_Volts0.dbl = b_Volts.dbl;
+                b_SoC10.dbl = b_SoC1.dbl;
+                p1_Time.dbl = 0;
+                p2_Time.dbl = 0;
+            }
+
+            if (isCharging && bmu_RemAh0.dbl == 0) {
+                bmu_CapAh0.dbl = bmu_Ah.cap;
+                bmu_RemAh0.dbl = bmu_Ah.rem;
+            }
+
+            if (isCharging && p1_Time.dbl == 0) p1_Volts.dbl = b_Volts.dbl;
+
+            if (isCharging && c_AmpsCal.dbl > -0.1 && !pause1) {
+                p1_Time.dbl = p1_Time.dbl + d_Hour * 60;
+                p1_Ah.dbl = b_Ah.rem;
+                p1_SoC.dbl = b_SoC1.dbl;
+            }
+
+            if (isCharging && c_AmpsCal.dbl < -0.5 && p1_Time.dbl > 0) pause1 = true;
+
+            if (isCharging && pause1 && p2_Time.dbl == 0) {
+                p2_Volts.dbl = b_Volts.dbl;
+            }
+
+            if (isCharging && pause1 && c_AmpsCal.dbl > -0.1) {
+                p2_Time.dbl = p2_Time.dbl + d_Hour * 60;
+                p2_Ah.dbl = b_Ah.rem;
+                p2_SoC.dbl = b_SoC1.dbl;
+            }
+
+            if (isCharging && pause1 && p2_Time.dbl > 0 && m_newPIDs == 0) {
+                isCharging = false;
+                bmu_CapAh1.dbl = bmu_Ah.cap;
+                bmu_RemAh1.dbl = bmu_Ah.rem;
+                b_CapAh1.dbl = b_Ah.cap;
+                b_RemAh1.dbl = b_Ah.rem;
+                b_Volts1.dbl = b_Volts.dbl;
+                b_SoC11.dbl = b_SoC1.dbl;
+                p12_CapAh.dbl = 100 * (p2_Ah.dbl - p1_Ah.dbl) / (p2_SoC.dbl - p1_SoC.dbl);
+                chargeFinished = true;
+            }
+        }
     }
 
-    private void processCapacity() {
-        switch (m_CapStep) {
+    @SuppressLint("SetTextI18n")
+    public void selectOne() {
+        switch (menuTabs) {
             case 0:
-                updateCapacity();
-                if (c_SoC1.dbl < 25 && c_SoC2.dbl < 25) m_CapStep = 1;
+                if (fragNo == FRAG_INFO) {
+                    updateFrag(FRAG_INFO);
+                } else {
+                    clrLines();
+                    lineOne.setBackgroundColor(Color.WHITE);
+                    textCell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f);
+                    textCell.setText("LEV and NMC");
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_place, FragmentInfo.newInstance())
+                            .commitNow();
+                    fragNo = FRAG_INFO;
+                }
                 break;
             case 1:
-                updateCapacity();
-                if (c_SoC1.dbl < 15 && c_SoC2.dbl < 15) {
-                    m_OCtimer.dbl = 0;
-                    m_CapStep = 2;
+                if (fragNo == FRAG_OPS) {
+                    updateFrag(FRAG_OPS);
+                } else {
+                    clrLines();
+                    lineOne.setBackgroundColor(Color.WHITE);
+                    textCell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 26f);
+                    textCell.setText("Type: " + i_Chem);
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_place, FragmentOps.newInstance())
+                            .commitNow();
+                    fragNo = FRAG_OPS;
                 }
                 break;
             case 2:
-                updateCapacity();
-                if (m_OCtimer.dbl > 5) computeCapacities1();
-                if (m_OCtimer.dbl > 30) {
-                    storeCapacities1();
-                    m_CapStep = 3;
+                if (fragNo == FRAG_PID) {
+                    updateFrag(FRAG_PID);
+                } else {
+                    clrLines();
+                    lineOne.setBackgroundColor(Color.WHITE);
+                    textCell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f);
+                    textCell.setText("LEV and NMC");
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_place, FragmentPIDs.newInstance())
+                            .commitNow();
+                    fragNo = FRAG_PID;
                 }
-                break;
-            case 3:
-                updateSums2();
-                if (c_AmpsCal.dbl < -1) m_CapStep = 4;
-                break;
-            case 4:
-                updateSums2();
-                if ((c_SoC1.dbl > 98 || c_SoC2.dbl > 98) && c_AmpsCal.dbl > -0.1) {
-                    m_OCtimer.dbl = 0;
-                    m_CapStep = 5;
-                }
-                break;
-            case 5:
-                updateSums2();
-                if (m_OCtimer.dbl > 0) m_CapStep = 6;
-                break;
-            case 6:
-                updateSums2();
-                if (m_OCtimer.dbl > 5) computeCapacities2();
-                if (m_OCtimer.dbl > 30) {
-                    if (cellsData) for (Cell aCell : listCells) aCell.isFound = false;
-                    m_CapCount = 0;
-                    m_CapStep = 7;
-                }
-                break;
-            case 7:
-                updateSums2();
-                computeCapacities2();
-                if (m_newPIDs > 0) m_CapCount++;
-                if (m_CapCount > 40) {
-                    if (cellsData) {
-                        int i = 0;
-                        for (Cell aCell : listCells) {
-                            if (aCell.isFound) i++;
-                        }
-                        if (i == m_CellsNo) {
-                            storeCapacities2();
-                            m_CapStep = 8;
-                        }
-                    } else {
-                        storeCapacities2();
-                        m_CapStep = 8;
-                    }
-                }
-                break;
-            case 8:
-                break;
-            default:
-                m_CapStep = 0;
                 break;
         }
     }
 
-    private void clrLines() {
-        lineOne.setBackgroundColor(BLACK);
-        lineTwo.setBackgroundColor(BLACK);
-        lineThree.setBackgroundColor(BLACK);
-        lineFour.setBackgroundColor(BLACK);
-        lineFive.setBackgroundColor(BLACK);
-    }
-
-    public void selectOne() {
-        if (fragNo == FRAG_INFO) {
-            updateFrag(FRAG_INFO);
-        } else {
-            clrLines();
-            lineOne.setBackgroundColor(Color.WHITE);
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.fragment_place, FragmentInfo.newInstance())
-                    .commitNow();
-            fragNo = FRAG_INFO;
-        }
-    }
-
+    @SuppressLint("SetTextI18n")
     public void selectTwo() {
         switch (menuTabs) {
             case 0:
@@ -2870,6 +2916,8 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     clrLines();
                     lineTwo.setBackgroundColor(Color.WHITE);
+                    textCell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 26f);
+                    textCell.setText("Type: " + i_Chem);
                     getSupportFragmentManager().beginTransaction()
                             .replace(R.id.fragment_place, FragmentWh.newInstance())
                             .commitNow();
@@ -2883,6 +2931,8 @@ public class MainActivity extends AppCompatActivity {
                     prepOBD();
                     clrLines();
                     lineTwo.setBackgroundColor(Color.WHITE);
+                    textCell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f);
+                    textCell.setText("warning capacity, range SoC etc. LEV only");
                     getSupportFragmentManager().beginTransaction()
                             .replace(R.id.fragment_place, FragmentOBD.newInstance())
                             .commitNow();
@@ -2890,20 +2940,24 @@ public class MainActivity extends AppCompatActivity {
                 }
                 break;
             case 2:
-                if (fragNo == FRAG_PID) {
-                    updateFrag(FRAG_PID);
+                if (fragNo == FRAG_CALC) {
+                    updateFrag(FRAG_CALC);
                 } else {
+                    prepCalc();
                     clrLines();
                     lineTwo.setBackgroundColor(Color.WHITE);
+                    textCell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f);
+                    textCell.setText("warning LEV only");
                     getSupportFragmentManager().beginTransaction()
-                            .replace(R.id.fragment_place, FragmentPIDs.newInstance())
+                            .replace(R.id.fragment_place, FragmentCalc.newInstance())
                             .commitNow();
-                    fragNo = FRAG_PID;
+                    fragNo = FRAG_CALC;
                 }
                 break;
         }
     }
 
+    @SuppressLint("SetTextI18n")
     public void selectThree() {
         switch (menuTabs) {
             case 0:
@@ -2912,6 +2966,8 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     clrLines();
                     lineThree.setBackgroundColor(Color.WHITE);
+                    textCell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 26f);
+                    textCell.setText("Type: " + i_Chem);
                     getSupportFragmentManager().beginTransaction()
                             .replace(R.id.fragment_place, FragmentAh.newInstance())
                             .commitNow();
@@ -2924,6 +2980,8 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     clrLines();
                     lineThree.setBackgroundColor(Color.WHITE);
+                    textCell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f);
+                    textCell.setText("LEV and NMC");
                     getSupportFragmentManager().beginTransaction()
                             .replace(R.id.fragment_place, FragmentCells.newInstance())
                             .commitNow();
@@ -2931,21 +2989,24 @@ public class MainActivity extends AppCompatActivity {
                 }
                 break;
             case 2:
-                if (fragNo == FRAG_CALC) {
-                    updateFrag(FRAG_CALC);
+                if (fragNo == FRAG_CHARGE) {
+                    updateFrag(FRAG_CHARGE);
                 } else {
                     prepCalc();
                     clrLines();
                     lineThree.setBackgroundColor(Color.WHITE);
+                    textCell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f);
+                    textCell.setText("warning LEV only");
                     getSupportFragmentManager().beginTransaction()
-                            .replace(R.id.fragment_place, FragmentCalc.newInstance())
+                            .replace(R.id.fragment_place, FragmentCharge.newInstance())
                             .commitNow();
-                    fragNo = FRAG_CALC;
+                    fragNo = FRAG_CHARGE;
                 }
                 break;
         }
     }
 
+    @SuppressLint("SetTextI18n")
     public void selectFour() {
         switch (menuTabs) {
             case 0:
@@ -2954,6 +3015,8 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     clrLines();
                     lineFour.setBackgroundColor(Color.WHITE);
+                    textCell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 26f);
+                    textCell.setText("LEV and NMC");
                     getSupportFragmentManager().beginTransaction()
                             .replace(R.id.fragment_place, FragmentWatts.newInstance())
                             .commitNow();
@@ -2966,6 +3029,8 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     clrLines();
                     lineFour.setBackgroundColor(Color.WHITE);
+                    textCell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 26f);
+                    textCell.setText("LEV and NMC");
                     getSupportFragmentManager().beginTransaction()
                             .replace(R.id.fragment_place, FragmentVolts.newInstance())
                             .commitNow();
@@ -2979,6 +3044,8 @@ public class MainActivity extends AppCompatActivity {
                     prepCap1();
                     clrLines();
                     lineFour.setBackgroundColor(Color.WHITE);
+                    textCell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f);
+                    textCell.setText("Type: " + i_Chem);
                     getSupportFragmentManager().beginTransaction()
                             .replace(R.id.fragment_place, FragmentCap1.newInstance())
                             .commitNow();
@@ -2988,6 +3055,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @SuppressLint("SetTextI18n")
     public void selectFive() {
         switch (menuTabs) {
             case 0:
@@ -2996,6 +3064,8 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     clrLines();
                     lineFive.setBackgroundColor(Color.WHITE);
+                    textCell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 26f);
+                    textCell.setText("warning LEV only");
                     getSupportFragmentManager().beginTransaction()
                             .replace(R.id.fragment_place, FragmentDrive.newInstance())
                             .commitNow();
@@ -3008,6 +3078,8 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     clrLines();
                     lineFive.setBackgroundColor(Color.WHITE);
+                    textCell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 26f);
+                    textCell.setText("LEV and NMC");
                     getSupportFragmentManager().beginTransaction()
                             .replace(R.id.fragment_place, FragmentTemp.newInstance())
                             .commitNow();
@@ -3021,6 +3093,8 @@ public class MainActivity extends AppCompatActivity {
                     prepCap2();
                     clrLines();
                     lineFive.setBackgroundColor(Color.WHITE);
+                    textCell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f);
+                    textCell.setText("warning LEV only");
                     getSupportFragmentManager().beginTransaction()
                             .replace(R.id.fragment_place, FragmentCap2.newInstance())
                             .commitNow();
@@ -3030,25 +3104,92 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void clrLines() {
+        lineOne.setBackgroundColor(BLACK);
+        lineTwo.setBackgroundColor(BLACK);
+        lineThree.setBackgroundColor(BLACK);
+        lineFour.setBackgroundColor(BLACK);
+        lineFive.setBackgroundColor(BLACK);
+    }
+
+    private void updateFrag(int f) {
+        if (f == fragNo) {
+            switch (f) {
+                case (FRAG_INFO):
+                    FragmentInfo.Refresh(listInfo);
+                    listInfo.clear();
+                    break;
+                case (FRAG_OBD):
+                    prepOBD();
+                    FragmentOBD.Refresh(arrayOBD);
+                    break;
+                case (FRAG_CELLS):
+                    FragmentCells.Refresh(listCells, cellsData);
+                    break;
+                case (FRAG_PID):
+                    FragmentPIDs.Refresh(listPIDs);
+                    break;
+                case (FRAG_CALC):
+                    prepCalc();
+                    FragmentCalc.Refresh(arrayOBD);
+                    break;
+                case (FRAG_CHARGE):
+                    FragmentCharge.Refresh();
+                    break;
+                case (FRAG_CAP1):
+                    prepCap1();
+                    FragmentCap1.Refresh(arrayOBD, stepCap1);
+                    break;
+                case (FRAG_CAP2):
+                    prepCap2();
+                    FragmentCap2.Refresh(arrayOBD, stepCap2);
+                    break;
+                case (FRAG_WATTS):
+                    FragmentWatts.Refresh();
+                    break;
+                case (FRAG_DRV):
+                    FragmentDrive.Refresh();
+                    break;
+                case (FRAG_AH):
+                    FragmentAh.Refresh();
+                    break;
+                case (FRAG_WH):
+                    FragmentWh.Refresh();
+                    break;
+                case (FRAG_VOLTS):
+                    FragmentVolts.Refresh();
+                    break;
+                case (FRAG_TEMP):
+                    FragmentTemp.Refresh();
+                    break;
+                case (FRAG_OPS):
+                    FragmentOps.Refresh();
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
     private void prepOBD() {
         arrayOBD.clear();
         arrayOBD.add("Time          " + displayDate.format(stepDateTime) + " " + displayTime.format(stepDateTime));
-        arrayOBD.add("Odometer      " + c_Odo.strUnit() + " " + decFix0.format(c_Odo.dbl / KmPerMile) + " miles");
-        arrayOBD.add("Speed         " + c_SpdShown.strUnit());
-        arrayOBD.add("Acc. Pedal    " + c_Pedal.strUnit());
-        arrayOBD.add("Acceleration  " + c_Acceleration.strUnit());
-        arrayOBD.add("Air sensor    " + c_AirSensor.strUnit());
+        arrayOBD.add("Odometer      " + c_Odo.unit() + " " + decFix0.format(c_Odo.dbl / KmPerMile) + " miles");
+        arrayOBD.add("Speed         " + c_Speed0.unit() + " " + decFix2.format(c_Speed0.dbl / KmPerMile) + " mph");
+        arrayOBD.add("Acc. Pedal    " + c_Pedal.unit());
+        arrayOBD.add("Acceleration  " + c_Acc.unit());
+        arrayOBD.add("Air sensor    " + c_AirSensor.unit());
         arrayOBD.add("Key           " + c_KeyOn.strOnOff());
         arrayOBD.add("Brake         " + c_BrakeOn.strOnOff() + " pressure " + c_Brake.str());
         arrayOBD.add("eStability    ");
-        arrayOBD.add("  Steering    " + c_Steering.strUnit());
-        arrayOBD.add("  Rotation    " + c_Rotation.strUnit());
+        arrayOBD.add("  Steering    " + c_Steering.unit());
+        arrayOBD.add("  Rotation    " + c_Rotation.unit());
         arrayOBD.add("  Wheel       ");
-        arrayOBD.add("    speed 1   " + c_Speed1.strUnit());
-        arrayOBD.add("    speed 2   " + c_Speed2.strUnit());
-        arrayOBD.add("    speed 3   " + c_Speed3.strUnit());
-        arrayOBD.add("    speed 4   " + c_Speed4.strUnit());
-        arrayOBD.add("    average   " + c_Speed0.strUnit());
+        arrayOBD.add("    speed 1   " + c_Speed1.unit());
+        arrayOBD.add("    speed 2   " + c_Speed2.unit());
+        arrayOBD.add("    speed 3   " + c_Speed3.unit());
+        arrayOBD.add("    speed 4   " + c_Speed4.unit());
+        arrayOBD.add("    average   " + c_Speed0.unit());
 
         switch (c_Gear.in()) {
             case 80:
@@ -3074,35 +3215,35 @@ public class MainActivity extends AppCompatActivity {
                 break;
         }
 
-        arrayOBD.add("Motor         " + c_MotorA.strUnit() + " " + decFix0.format(c_MotorA.dbl * b_Volts.dbl) + " W " + c_RPM.strUnit());
-        arrayOBD.add("Motor temps.  " + c_MotorTemp0.strUnit() + " " + c_MotorTemp1.strUnit() + " " + c_MotorTemp2.strUnit() + " " + c_MotorTemp3.strUnit());
-        arrayOBD.add("Regeneration  " + c_RegA.strUnit() + " " + c_RegW.strUnit());
+        arrayOBD.add("Motor         " + c_MotorA.unit() + " " + decFix0.format(c_MotorA.dbl * b_Volts.dbl) + " W " + c_RPM.unit());
+        arrayOBD.add("Motor temps.  " + c_MotorTemp0.unit() + " " + c_MotorTemp1.unit() + " " + c_MotorTemp2.unit() + " " + c_MotorTemp3.unit());
+        arrayOBD.add("Regeneration  " + c_RegA.unit() + " " + c_RegW.unit());
         arrayOBD.add("Battery");
-        arrayOBD.add("  Voltage     " + b_Volts.strUnit());
-        arrayOBD.add("  Current out " + c_Amps.strUnit() + " calib. " + c_AmpsCal.strUnit());
-        arrayOBD.add("  Watts   out " + b_Watts.strUnit() + " calibrated");
-        arrayOBD.add("  SoC         (1) " + c_SoC1.strUnit() + " (2) " + c_SoC2.strUnit());
-        arrayOBD.add("  Capacity    " + c_CapAh.strUnit() + " @ 100% SoC");
-        arrayOBD.add("  SoH         " + decFix0.format(100 * c_CapAh.dbl / 50.0) + " % of 50Ah");
+        arrayOBD.add("  Voltage     " + b_Volts.unit());
+        arrayOBD.add("  Current out " + c_AmpsCal.unit() + " calibrated");
+        arrayOBD.add("  Watts   out " + c_WattsCal.unit() + " calibrated");
+        arrayOBD.add("  SoC         (1) " + b_SoC1.unit() + " (2) " + b_SoC2.unit());
+        arrayOBD.add("  Capacity    " + c_Ah.capUnit() + " @ 100% SoC");
+        arrayOBD.add("  SoH         " + decFix0.format(100 * c_Ah.cap / 50.0) + " % of 50Ah");
         arrayOBD.add("Battery Management Unit");
-        arrayOBD.add("  Capacity    " + b_BMUCapAh.strUnit() + " @ 100% SoC");
-        arrayOBD.add("  SoH         " + decFix0.format(100 * b_BMUCapAh.dbl / 48.0) + " % of 48Ah");
-        arrayOBD.add("  Ah          " + b_BMURemAh.strUnit());
-        arrayOBD.add("  SoC         " + b_BMUSoC.strUnit());
+        arrayOBD.add("  Capacity    " + bmu_Ah.capUnit() + " @ 100% SoC");
+        arrayOBD.add("  SoH         " + decFix0.format(100 * bmu_Ah.cap / 48.0) + " % of 48Ah");
+        arrayOBD.add("  Ah          " + bmu_Ah.remUnit());
+        arrayOBD.add("  SoC         " + bmu_Ah.SoCUnit());
 
         arrayOBD.add("Cells");
         if (cellsData) {
-            arrayOBD.add("  Voltage     max " + b_CellVmax.strVoltage(3) + " min " + b_CellVmin.strVoltage(3));
+            arrayOBD.add("  Voltage     max " + b_Cellmax.strVolts(3) + " min " + b_Cellmin.strVolts(3));
         } else {
-            arrayOBD.add("  Voltage     max " + b_BatVmax.strUnit() + " min " + b_BatVmin.strUnit());
+            arrayOBD.add("  Voltage     max " + b_BatVmax.unit() + " min " + b_BatVmin.unit());
         }
-        arrayOBD.add("  Temperature max " + b_BatTmax.strUnit() + " min " + b_BatTmin.strUnit());
+        arrayOBD.add("  Temperature max " + b_BatTmax.unit() + " min " + b_BatTmin.unit());
 
-        arrayOBD.add("Rest Range    " + c_RestRange.strUnit() + " " + decFix0.format(c_RestRange.dbl / KmPerMile) + " miles");
+        arrayOBD.add("Rest Range    " + c_Ah.RRUnit() + " " + decFix0.format(c_Ah.RR() / KmPerMile) + " miles");
         arrayOBD.add("Heat/Cool     " + h_Level.str());
-        arrayOBD.add("Heater        " + h_Amps.strUnit() + " " + h_Watts.strUnit());
+        arrayOBD.add("Heater        " + h_Amps.unit() + " " + h_Watts.unit());
 
-        arrayOBD.add("AC            " + ac_On.strOnOff() + " " + ac_Amps.strUnit() + " " + ac_Watts.strUnit());
+        arrayOBD.add("AC            " + ac_On.strOnOff() + " " + ac_Amps.unit() + " " + ac_Watts.unit());
 
         arrayOBD.add("Recirculation " + a_Reci.strOnOff());
 
@@ -3113,12 +3254,12 @@ public class MainActivity extends AppCompatActivity {
         }
 
         arrayOBD.add("Charging");
-        arrayOBD.add("  Battery DC  " + c_ChargeVDC.strUnit() + " " + c_ChargeADC.strUnit() + " " + decFix0.format(c_ChargeVDC.dbl * c_ChargeADC.dbl) + " W");
-        arrayOBD.add("  Mains   AC  " + c_ChargeVAC.strUnit() + " " + c_ChargeAAC.strUnit() + " " + decFix0.format(c_ChargeVAC.dbl * c_ChargeAAC.dbl) + " W");
-        arrayOBD.add("  Temperature " + c_ChargeTemp1.strUnit() + " " + c_ChargeTemp2.strUnit());
+        arrayOBD.add("  Battery DC  " + c_ChargeVDC.unit() + " " + c_ChargeADC.unit() + " " + decFix0.format(c_ChargeVDC.dbl * c_ChargeADC.dbl) + " W");
+        arrayOBD.add("  Mains   AC  " + c_ChargeVAC.unit() + " " + c_ChargeAAC.unit() + " " + decFix0.format(c_ChargeVAC.dbl * c_ChargeAAC.dbl) + " W");
+        arrayOBD.add("  Temperature " + c_ChargeTemp1.unit() + " " + c_ChargeTemp2.unit());
 
         if (c_QuickCharge.in() == 1)
-            arrayOBD.add("Chademo       " + c_QCAmps.strUnit() + " " + decFix0.format(c_QCAmps.dbl * b_Volts.dbl) + " W " + c_QCprocent.strUnit());
+            arrayOBD.add("Chademo       " + c_QCAmps.unit() + " " + decFix0.format(c_QCAmps.dbl * b_Volts.dbl) + " W " + c_QCprocent.unit());
         else arrayOBD.add("Chademo       off");
 
         arrayOBD.add("Lights");
@@ -3142,7 +3283,7 @@ public class MainActivity extends AppCompatActivity {
 
         arrayOBD.add("Rear defrost  " + w_DeRear.strOnOff());
         arrayOBD.add("Wipers        " + w_WiperF.strOnOff());
-        arrayOBD.add("Charge 12vBat " + c_12vAmps.strUnit() + " " + c_12vWatts.strUnit());
+        arrayOBD.add("Charge 12vBat " + c_12vAmps.unit() + " " + c_12vWatts.unit());
         arrayOBD.add("Model Year    " + c_Model.str());
         arrayOBD.add("VIN           " + strVIN[0] + strVIN[1] + strVIN[2]);
     }
@@ -3155,21 +3296,21 @@ public class MainActivity extends AppCompatActivity {
 
         arrayOBD.add(c_Odo.str());
         arrayOBD.add(m_Odo.str());
-        arrayOBD.add(b_Watts.str());
+        arrayOBD.add(c_WattsCal.str());
         arrayOBD.add(m_Watts.str());
         arrayOBD.add(t_W.str());
-        arrayOBD.add(c_WhRem.str());
-        arrayOBD.add(b_WhRem.str());
-        arrayOBD.add(m_WhRem.str());
-        arrayOBD.add(t_WhReq.str());
-        arrayOBD.add(c_Whkm.str());
-        arrayOBD.add(b_Whkm.str());
-        arrayOBD.add(m_Whkm.str());
-        arrayOBD.add(t_Whkm.str());
-        arrayOBD.add(c_RR.str());
-        arrayOBD.add(b_RR.str());
-        arrayOBD.add(m_RR.str());
-        arrayOBD.add(t_RR.str());
+        arrayOBD.add(c_Ah.remWhStr());
+        arrayOBD.add(b_Ah.remWhStr());
+        arrayOBD.add(m_Ah.remWhStr());
+        arrayOBD.add(t_Ah.remWhStr());
+        arrayOBD.add(c_Ah.WhkmStr());
+        arrayOBD.add(b_Ah.WhkmStr());
+        arrayOBD.add(m_Ah.WhkmStr());
+        arrayOBD.add(t_Ah.WhkmStr());
+        arrayOBD.add(c_Ah.RRStr());
+        arrayOBD.add(b_Ah.RRStr());
+        arrayOBD.add(m_Ah.RRStr());
+        arrayOBD.add(t_Ah.RRStr());
 
         arrayOBD.add(m_AuxW.str());
         arrayOBD.add(e_N.str());
@@ -3179,60 +3320,61 @@ public class MainActivity extends AppCompatActivity {
         arrayOBD.add(m_km.str());
         arrayOBD.add(t_km.str());
         arrayOBD.add(i_Margin.str());
-        arrayOBD.add(t_RR.str());
+        arrayOBD.add(t_Ah.RRStr());
 
         arrayOBD.add(c_SpdShown.str());
         arrayOBD.add(c_Speed0.str());
         arrayOBD.add(c_Speed0Avg.str());
         arrayOBD.add(t_Speed.str());
 
-        arrayOBD.add(b_BMUCapAh.str());
-        arrayOBD.add(b_BMURemAh.str());
-        arrayOBD.add(b_BMUSoC.str());
-        arrayOBD.add(b_AhRem.str());
-        arrayOBD.add(b_CapAhCheck.str());
+        arrayOBD.add(c_Ah.capStr());
+        arrayOBD.add(c_Ah.remStr());
+        arrayOBD.add(b_Ah.capStr());
+        arrayOBD.add(b_Ah.remStr());
+        arrayOBD.add(b_CapEst.str());
     }
 
     private void prepCap1() {
         arrayOBD.clear();
-        arrayOBD.add(displayDate.format(stepDateTime));
-        arrayOBD.add(displayTime.format(stepDateTime));
-        arrayOBD.add(decFix2.format(d_Second) + " sec");
-        arrayOBD.add(c_SoC1.str());
-        arrayOBD.add(c_SoC2.str());
-        arrayOBD.add(m_CapSoCUsed.str());
-        arrayOBD.add(b_BMUCapAh.str());
-        arrayOBD.add(m_CapAhUsed.str());
-        arrayOBD.add(m_AmpsAvg.str());
-        arrayOBD.add(m_OCtimer.str());
+        arrayOBD.add(displayDate.format(stepDateTime)); //0
+        arrayOBD.add(displayTime.format(stepDateTime)); //1
+        arrayOBD.add(decFix2.format(d_Second) + " sec");//2
+        arrayOBD.add(i_Chem);//3
+        arrayOBD.add(b_Ah.usedStr());//4
+        arrayOBD.add("");//5
+        arrayOBD.add("");//6
+        arrayOBD.add("");//7
+        arrayOBD.add("");//8
+        arrayOBD.add(c_AmpsCal.str());//9
+        arrayOBD.add(m_OCtimer.str());//10
         if (cellsData) {
-            arrayOBD.add(m_CellAhmax.strModule());
-            arrayOBD.add(m_CellAhmax.strCellLetter());
-            arrayOBD.add(m_CellAhmax.strVoltage(3));
-            arrayOBD.add(m_CellAhmax.strSoC());
-            arrayOBD.add(m_CellAhmax.strAh1());
-            arrayOBD.add(b_CellVavg.str());
-            arrayOBD.add(m_SoCavg.str());
-            arrayOBD.add(m_Cap1AhavgDisplay.str());
-            arrayOBD.add(m_CellAhmin.strModule());
-            arrayOBD.add(m_CellAhmin.strCellLetter());
-            arrayOBD.add(m_CellAhmin.strVoltage(3));
-            arrayOBD.add(m_CellAhmin.strSoC());
-            arrayOBD.add(m_CellAhmin.strAh1());
+            arrayOBD.add(b_Cellmax.strModule());//11
+            arrayOBD.add(b_Cellmax.strCellLetter());//12
+            arrayOBD.add(b_Cellmax.strVolts(3));//13
+            arrayOBD.add(b_Cellmax.strSoC());//14
+            arrayOBD.add(b_Cellmax.strAh1());//15
+            arrayOBD.add(b_Cellavg.strVolts(3));//16
+            arrayOBD.add(b_Cellavg.strSoC());//17
+            arrayOBD.add(b_Cellavg.strAh1());//18
+            arrayOBD.add(b_Cellmin.strModule());//19
+            arrayOBD.add(b_Cellmin.strCellLetter());//20
+            arrayOBD.add(b_Cellmin.strVolts(3));//21
+            arrayOBD.add(b_Cellmin.strSoC());//22
+            arrayOBD.add(b_Cellmin.strAh1());//23
         } else {
-            arrayOBD.add("");
-            arrayOBD.add("");
-            arrayOBD.add(b_BatVmax.str());
-            arrayOBD.add(b_BatSoCmax.str());
-            arrayOBD.add(m_BatAh1max.str());
-            arrayOBD.add(b_BatVavg.str());
-            arrayOBD.add(b_BatSoCavg.str());
-            arrayOBD.add(m_Cap1AhavgDisplay.str());
-            arrayOBD.add("");
-            arrayOBD.add("");
-            arrayOBD.add(b_BatVmin.str());
-            arrayOBD.add(b_BatSoCmin.str());
-            arrayOBD.add(m_BatAh1min.str());
+            arrayOBD.add("");//11
+            arrayOBD.add("");//12
+            arrayOBD.add(b_Cellmax.strVolts(3));//13
+            arrayOBD.add(b_Cellmax.strSoC());//14
+            arrayOBD.add(b_Cellmax.strAh1());//15
+            arrayOBD.add(b_Cellavg.strVolts(3));//16
+            arrayOBD.add(b_Cellavg.strSoC());//17
+            arrayOBD.add(b_Cellavg.strAh1());//18
+            arrayOBD.add("");//19
+            arrayOBD.add("");//20
+            arrayOBD.add(b_Cellmin.strVolts(3));//21
+            arrayOBD.add(b_Cellmin.strSoC());//22
+            arrayOBD.add(b_Cellmin.strAh1());//23
         }
     }
 
@@ -3241,99 +3383,41 @@ public class MainActivity extends AppCompatActivity {
         arrayOBD.add(displayDate.format(stepDateTime));
         arrayOBD.add(displayTime.format(stepDateTime));
         arrayOBD.add(decFix2.format(d_Second) + " sec");
-        arrayOBD.add(c_SoC1.str());
-        arrayOBD.add(c_SoC2.str());
-        arrayOBD.add(b_BMUCapAh.str());
+        arrayOBD.add(b_SoC1.str());
+        arrayOBD.add(b_SoC2.str());
+        arrayOBD.add(b_Ah.capStr());
         arrayOBD.add(b_Temp.str());
-        arrayOBD.add(m_CapAhsum.str());
-        arrayOBD.add(m_AmpsAvg.str());
+        arrayOBD.add(m_Ah.sumStr());
+        arrayOBD.add(c_AmpsCal.str());
         arrayOBD.add(m_OCtimer.str());
         if (cellsData) {
-            arrayOBD.add(m_CellAhmax.strModule());
-            arrayOBD.add(m_CellAhmax.strCellLetter());
-            arrayOBD.add(m_CellAhmax.strVoltage(3));
-            arrayOBD.add(m_CellAhmax.strSoCsum());
-            arrayOBD.add(m_CellAhmax.strAh2());
-            arrayOBD.add(b_CellVavg.str());
-            arrayOBD.add(m_Cap2SoCsum.str());
-            arrayOBD.add(m_Cap2AhavgDisplay.str());
-            arrayOBD.add(m_CellAhmin.strModule());
-            arrayOBD.add(m_CellAhmin.strCellLetter());
-            arrayOBD.add(m_CellAhmin.strVoltage(3));
-            arrayOBD.add(m_CellAhmin.strSoCsum());
-            arrayOBD.add(m_CellAhmin.strAh2());
+            arrayOBD.add(m_CAh2max.strModule());
+            arrayOBD.add(m_CAh2max.strCellLetter());
+            arrayOBD.add(m_CAh2max.strVolts(3));
+            arrayOBD.add(m_CAh2max.strSoCsum());
+            arrayOBD.add(m_CAh2max.strAh2());
+            arrayOBD.add(m_CAh2avg.strVolts(3));
+            arrayOBD.add(m_CAh2avg.strSoCsum());
+            arrayOBD.add(m_CAh2avg.strAh2());
+            arrayOBD.add(m_CAh2min.strModule());
+            arrayOBD.add(m_CAh2min.strCellLetter());
+            arrayOBD.add(m_CAh2min.strVolts(3));
+            arrayOBD.add(m_CAh2min.strSoCsum());
+            arrayOBD.add(m_CAh2min.strAh2());
         } else {
             arrayOBD.add("");
             arrayOBD.add("");
-            arrayOBD.add(b_BatVmax.str());
-            arrayOBD.add(m_BatSummax.str());
-            arrayOBD.add(m_BatAh2max.str());
-            arrayOBD.add(b_BatVavg.str());
-            arrayOBD.add(m_BatSumavg.str());
-            arrayOBD.add(m_Cap2AhavgDisplay.str());
+            arrayOBD.add(m_CAh2max.strVolts(3));
+            arrayOBD.add(m_CAh2max.strSoCsum());
+            arrayOBD.add(m_CAh2max.strAh2());
+            arrayOBD.add(m_CAh2avg.strVolts(3));
+            arrayOBD.add(m_CAh2avg.strSoCsum());
+            arrayOBD.add(m_CAh2avg.strAh2());
             arrayOBD.add("");
             arrayOBD.add("");
-            arrayOBD.add(b_BatVmin.str());
-            arrayOBD.add(m_BatSummin.str());
-            arrayOBD.add(m_BatAh2min.str());
-        }
-    }
-
-
-    private void updateFrag(int f) {
-        if (f == fragNo) {
-            switch (f) {
-                case (FRAG_INFO):
-                    FragmentInfo.Refresh(listInfo);
-                    listInfo.clear();
-                    break;
-                case (FRAG_OBD):
-                    prepOBD();
-                    FragmentOBD.Refresh(arrayOBD);
-                    break;
-                case (FRAG_CELLS):
-                    FragmentCells.Refresh(listCells, cellsData,
-                            b_CellVmax.volts, b_CellVmin.volts,
-                            b_BatTmax.dbl, b_BatTmin.dbl,
-                            m_Cap1Ahmax.dbl, m_Cap1Ahmin.dbl,
-                            m_Cap2Ahmax.dbl, m_Cap2Ahmin.dbl);
-                    break;
-                case (FRAG_PID):
-                    FragmentPIDs.Refresh(listPIDs);
-                    break;
-                case (FRAG_CALC):
-                    prepCalc();
-                    FragmentCalc.Refresh(arrayOBD);
-                    break;
-                case (FRAG_CAP1):
-                    prepCap1();
-                    FragmentCap1.Refresh(arrayOBD, m_CapStep);
-                    break;
-                case (FRAG_CAP2):
-                    prepCap2();
-                    FragmentCap2.Refresh(arrayOBD, m_CapStep);
-                    break;
-                case (FRAG_WATTS):
-                    FragmentWatts.Refresh();
-                    break;
-                case (FRAG_DRV):
-                    FragmentDrive.Refresh();
-                    break;
-                case (FRAG_AH):
-                    FragmentAh.Refresh();
-                    break;
-                case (FRAG_WH):
-                    FragmentWh.Refresh();
-                    break;
-                case (FRAG_VOLTS):
-                    FragmentVolts.Refresh();
-                    break;
-                case (FRAG_TEMP):
-                    FragmentTemp.Refresh();
-                    break;
-                default:
-                    break;
-            }
+            arrayOBD.add(m_CAh2min.strVolts(3));
+            arrayOBD.add(m_CAh2min.strSoCsum());
+            arrayOBD.add(m_CAh2min.strAh2());
         }
     }
 
@@ -3341,7 +3425,7 @@ public class MainActivity extends AppCompatActivity {
     private final IStaticHandler handlerBT = new IStaticHandler() {
         @Override
         public void handleMessage(Message msg) {
-            updateTimers();
+            cycleTimer();
             switch (msg.what) {
                 case MESSAGE_STATE_CHANGE:
                     switch (msg.getData().getInt(STATE)) {
@@ -3454,6 +3538,15 @@ public class MainActivity extends AppCompatActivity {
                             stepTime = 0;
                             updateFrag(FRAG_INFO);
                             if (serviceSerial != null) serviceSerial.startBMU();
+                        } else if (lineReceived.contains("ELM327")) {
+                            if (isSleeping) {
+                                monitor = 0;
+                                isSleeping = false;
+                                isReset = false;
+                                updateInfo("app:Dongle awake " + cycleTime + " ms.");
+                                if (runCollector) doRestart();
+                                else finishOnStart();
+                            }
                         } else {
                             if (runCollector) readLine(lineReceived);
                         }
@@ -3470,7 +3563,7 @@ public class MainActivity extends AppCompatActivity {
 
     private final Runnable monitorOBD = new Runnable() {
         public void run() {
-            updateTimers();
+            cycleTimer();
             long time_OBD = 600;
             if (serviceSerial != null) {
                 switch (serviceSerial.getState()) {
@@ -3493,7 +3586,12 @@ public class MainActivity extends AppCompatActivity {
                                 updateFrag(FRAG_INFO);
                                 serviceSerial.startCollector();
                             } else if (monitor == 32) {
-                                updateInfo("app:Bluetooth disconnected @ " + cycleTime + " ms.");
+                                updateInfo("app:Dongle asleep @ " + cycleTime + " ms.");
+                                updateFrag(FRAG_INFO);
+                                isSleeping = true;
+                                serviceSerial.wakeUp();
+                            } else if (monitor == 48) {
+                                updateInfo("app:Dongle disconnect @ " + cycleTime + " ms.");
                                 updateFrag(FRAG_INFO);
                                 serviceSerial.disconnect();
                             }
@@ -3505,7 +3603,7 @@ public class MainActivity extends AppCompatActivity {
                     case BluetoothSerialService.STATE_LOST:
                     case BluetoothSerialService.STATE_NONE:
                         if (runCollector) {
-                            if (monitor == 34) {
+                            if (monitor == 64) {
                                 updateInfo("app:OBD will try to reconnect 3 times.");
                                 updateInfo("app:Please wait. This takes time.");
                                 updateFrag(FRAG_INFO);
@@ -3514,7 +3612,7 @@ public class MainActivity extends AppCompatActivity {
                                 updateFrag(FRAG_INFO);
                                 if (connectedDevice != null)
                                     serviceSerial.connect(connectedDevice);
-                            } else if (monitor > 226) {
+                            } else if (monitor > 288) {
                                 updateInfo("app:Data collection stopped @ " + cycleTime + " ms.");
                                 updateFrag(FRAG_INFO);
                                 monitor = 0;
@@ -3529,7 +3627,7 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    private void updateTimers() {
+    private void cycleTimer() {
         long time_ms = currentTimeMillis() - previousTime;
         previousTime = currentTimeMillis();
         stepTime += time_ms;
@@ -3537,13 +3635,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void iniStorage() {
-        if (okFileDir) {
+        if (fileFolder != null && fileFolder.exists()) {
             boolean noExceptions = true;
             boolean Ok = true;
             String currentDateTime = fileDate.format(new Date());
 
             String file = "Info_" + currentDateTime + ".txt";
-            fileInfo = new File(fileDir, file);
+            fileInfo = new File(fileFolder, file);
             if (fileInfo.exists()) Ok = fileInfo.delete();
             String textToWrite = "Info Screen messages" + "\r\n";
             try {
@@ -3560,7 +3658,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             file = "PID_" + currentDateTime + ".txt";
-            filePIDs = new File(fileDir, file);
+            filePIDs = new File(fileFolder, file);
             if (filePIDs.exists()) Ok = filePIDs.delete();
             textToWrite = "Time;PID;hex0;hex1;hex2;hex3;hex4;hex5;hex6;hex7" + "\r\n";
             try {
@@ -3577,7 +3675,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             file = "PIDInt_" + currentDateTime + ".txt";
-            filePIDInt = new File(fileDir, file);
+            filePIDInt = new File(fileFolder, file);
             if (filePIDInt.exists()) Ok = filePIDInt.delete();
             textToWrite = "Time;PID;int0;int1;int2;int3;int4;int5;int6;int7" + "\r\n";
             try {
@@ -3594,7 +3692,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             file = "Cells_" + currentDateTime + ".txt";
-            fileCells = new File(fileDir, file);
+            fileCells = new File(fileFolder, file);
             if (fileCells.exists()) Ok = fileCells.delete();
             textToWrite = "Time;Module;Cell;Volts;InterpolatedTemperature;SoC;Capacity1;SoCsum;Capacity2" + "\r\n";
             try {
@@ -3611,7 +3709,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             file = "CellTemperatures_" + currentDateTime + ".txt";
-            fileSensors = new File(fileDir, file);
+            fileSensors = new File(fileFolder, file);
             if (fileSensors.exists()) Ok = fileSensors.delete();
             textToWrite = "Time;Module;Sensor;Temperature" + "\r\n";
             try {
@@ -3628,7 +3726,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             file = "OBD_" + currentDateTime + ".txt";
-            fileOBD = new File(fileDir, file);
+            fileOBD = new File(fileFolder, file);
             if (fileOBD.exists()) Ok = fileOBD.delete();
             textToWrite = "Time;Parameter;Value" + "\r\n";
             try {
@@ -3645,7 +3743,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             file = "Calc_" + currentDateTime + ".txt";
-            fileCalc = new File(fileDir, file);
+            fileCalc = new File(fileFolder, file);
             if (fileCalc.exists()) Ok = fileCalc.delete();
             textToWrite = "Time;Parameter;Value" + "\r\n";
             try {
@@ -3669,6 +3767,8 @@ public class MainActivity extends AppCompatActivity {
                 btnFive.setBackgroundColor(clrDarkGreen);
                 StoreInfo();
             } else {
+                iniRecording = false;
+                runRecording = false;
                 updateInfo("app:Recording failed for reasons unknown.");
                 updateFrag(FRAG_INFO);
                 stopRecording();
@@ -3750,7 +3850,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void StorePIDs(String datetime) {
         if (filePIDs != null && filePIDs.exists()) {
-            String[] str = new String[1000];
+            int nPID = 200;
+            String[] str = new String[nPID + 2];
             str[0] = filePIDs.toString();
             int i = 1;
             ArrayList<String[]> PIDnames = new ArrayList<>();
@@ -3771,6 +3872,7 @@ public class MainActivity extends AppCompatActivity {
                     str[i] = strOut.toString();
                     i++;
                 }
+                if (i > nPID) break;
             }
             str[i] = "Stop";
 
@@ -3799,7 +3901,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void StorePIDIntegers(String datetime) {
         if (filePIDInt != null && filePIDInt.exists()) {
-            String[] str = new String[100];
+            int nPID = 200;
+            String[] str = new String[nPID + 2];
             str[0] = filePIDInt.toString();
             int i = 1;
             for (PID aPID : listPIDs) {
@@ -3811,6 +3914,7 @@ public class MainActivity extends AppCompatActivity {
                     str[i] = strOut.toString();
                     i++;
                 }
+                if (i > nPID) break;
             }
             str[i] = "Stop";
 
@@ -3839,7 +3943,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void StoreCells(String datetime) {
         if (fileCells != null && fileCells.exists()) {
-            String[] str = new String[120];
+            int nCells = 118;
+            String[] str = new String[nCells + 2];
             str[0] = fileCells.toString();
             int i = 1;
             for (Cell aCell : listCells)
@@ -3848,7 +3953,7 @@ public class MainActivity extends AppCompatActivity {
                         str[i] = datetime +
                                 ";" + aCell.strModule() +
                                 ";" + aCell.strCellLetter() +
-                                ";" + aCell.strVoltage(3) +
+                                ";" + aCell.strVolts(3) +
                                 ";" + aCell.strTemperature() +
                                 ";" + aCell.strSoC() +
                                 ";" + aCell.strAh1() +
@@ -3857,6 +3962,7 @@ public class MainActivity extends AppCompatActivity {
                                 "\r\n";
                         i++;
                     }
+                    if (i > nCells) break;
                 }
             str[i] = "Stop";
 
@@ -3930,6 +4036,7 @@ public class MainActivity extends AppCompatActivity {
         if (fileOBD != null && fileOBD.exists()) {
             ArrayList<String> strArray = new ArrayList<>();
             strArray.add(fileOBD.toString());
+            strArray.add(datetime + ";Version;" + BuildConfig.VERSION_NAME.replace(".", "") + "\r\n");
             strArray.add(datetime + ";Odometer;" + c_Odo.str() + "\r\n");
             strArray.add(datetime + ";Speed;" + c_Speed0.str() + "\r\n");
             strArray.add(datetime + ";SpeedShown;" + c_SpdShown.str() + "\r\n");
@@ -3937,7 +4044,7 @@ public class MainActivity extends AppCompatActivity {
             strArray.add(datetime + ";Speed2;" + c_Speed2.str() + "\r\n");
             strArray.add(datetime + ";Speed3;" + c_Speed3.str() + "\r\n");
             strArray.add(datetime + ";Speed4;" + c_Speed4.str() + "\r\n");
-            strArray.add(datetime + ";Acceleration;" + c_Acceleration.str() + "\r\n");
+            strArray.add(datetime + ";Acceleration;" + c_Acc.str() + "\r\n");
             strArray.add(datetime + ";AccPedal;" + c_Pedal.str() + "\r\n");
             strArray.add(datetime + ";KeyOn/Off;" + c_KeyOn.str() + "\r\n");
             strArray.add(datetime + ";Brake;" + c_Brake.str() + "\r\n");
@@ -3946,17 +4053,17 @@ public class MainActivity extends AppCompatActivity {
             strArray.add(datetime + ";Rotation;" + c_Rotation.str() + "\r\n");
             strArray.add(datetime + ";MotorRPM;" + c_RPM.str() + "\r\n");
             strArray.add(datetime + ";BatteryV;" + b_Volts.str() + "\r\n");
-            strArray.add(datetime + ";BatteryA;" + b_Amps.str() + "\r\n");
+            strArray.add(datetime + ";BatteryA;" + b_Amps68.str() + "\r\n");
             strArray.add(datetime + ";BatACalOut;" + c_AmpsCal.str() + "\r\n");
-            strArray.add(datetime + ";BatWCalOut;" + b_Watts.str() + "\r\n");
+            strArray.add(datetime + ";BatWCalOut;" + c_WattsCal.str() + "\r\n");
             strArray.add(datetime + ";BatteryT;" + b_Temp.str() + "\r\n");
-            strArray.add(datetime + ";BatCapAh;" + c_CapAh.str() + "\r\n");
-            strArray.add(datetime + ";BMURemAh;" + b_BMURemAh.str() + "\r\n");
-            strArray.add(datetime + ";BMUCapAh;" + b_BMUCapAh.str() + "\r\n");
-            strArray.add(datetime + ";RestRange;" + c_RestRange.str() + "\r\n");
+            strArray.add(datetime + ";BatCapAh;" + c_Ah.capStr() + "\r\n");
+            strArray.add(datetime + ";BMURemAh;" + bmu_Ah.remStr() + "\r\n");
+            strArray.add(datetime + ";BMUCapAh;" + bmu_Ah.capStr() + "\r\n");
+            strArray.add(datetime + ";RestRange;" + c_Ah.RRStr() + "\r\n");
             strArray.add(datetime + ";RangeShown;" + c_RRshown.str() + "\r\n");
-            strArray.add(datetime + ";SoC1;" + c_SoC1.str() + "\r\n");
-            strArray.add(datetime + ";SoC2;" + c_SoC2.str() + "\r\n");
+            strArray.add(datetime + ";SoC1;" + b_SoC1.str() + "\r\n");
+            strArray.add(datetime + ";SoC2;" + b_SoC2.str() + "\r\n");
             strArray.add(datetime + ";HeaterA;" + h_Amps.str() + "\r\n");
             strArray.add(datetime + ";HeaterW;" + h_Watts.str() + "\r\n");
             strArray.add(datetime + ";Heat/Cool;" + h_Level.str() + "\r\n");
@@ -3985,6 +4092,7 @@ public class MainActivity extends AppCompatActivity {
             strArray.add(datetime + ";MotorA;" + c_MotorA.str() + "\r\n");
             strArray.add(datetime + ";RegenA;" + c_RegA.str() + "\r\n");
             strArray.add(datetime + ";QuickChargeOn/Off;" + c_QuickCharge.str() + "\r\n");
+            strArray.add(datetime + ";QuickOn/Off;" + c_QuickCharge.str() + "\r\n");
             strArray.add(datetime + ";QuickCharge%;" + c_QCprocent.str() + "\r\n");
             strArray.add(datetime + ";QuickChargeA;" + c_QCAmps.str() + "\r\n");
             strArray.add(datetime + ";MotorTemp0;" + c_MotorTemp0.str() + "\r\n");
@@ -3996,25 +4104,51 @@ public class MainActivity extends AppCompatActivity {
             strArray.add(datetime + ";BatteryVmax;" + b_BatVmax.str() + "\r\n");
             strArray.add(datetime + ";BatteryVavg;" + b_BatVavg.str() + "\r\n");
             strArray.add(datetime + ";BatteryVmin;" + b_BatVmin.str() + "\r\n");
-            strArray.add(datetime + ";BatSoCmax;" + b_BatSoCmax.str() + "\r\n");
-            strArray.add(datetime + ";BatSoCavg;" + b_BatSoCavg.str() + "\r\n");
-            strArray.add(datetime + ";BatSoCmin;" + b_BatSoCmin.str() + "\r\n");
-            strArray.add(datetime + ";CellVmaxMod;" + b_CellVmax.strModule() + "\r\n");
-            strArray.add(datetime + ";CellVmaxCell;" + b_CellVmax.strCell() + "\r\n");
-            strArray.add(datetime + ";CellVmaxVolt;" + b_CellVmax.strVoltage(3) + "\r\n");
-            strArray.add(datetime + ";CellVmaxTemp;" + b_CellVmax.strTemperature() + "\r\n");
-            strArray.add(datetime + ";CellVminMod;" + b_CellVmin.strModule() + "\r\n");
-            strArray.add(datetime + ";CellVminCell;" + b_CellVmin.strCell() + "\r\n");
-            strArray.add(datetime + ";CellVminVolt;" + b_CellVmin.strVoltage(3) + "\r\n");
-            strArray.add(datetime + ";CellVminTemp;" + b_CellVmin.strTemperature() + "\r\n");
-            strArray.add(datetime + ";CellVsum;" + b_CellVsum.str() + "\r\n");
+            strArray.add(datetime + ";BatSoCmax;" + b_Cellmax.strSoC() + "\r\n");
+            strArray.add(datetime + ";BatSoCavg;" + b_Cellavg.strSoC() + "\r\n");
+            strArray.add(datetime + ";BatSoCmin;" + b_Cellmin.strSoC() + "\r\n");
+            strArray.add(datetime + ";CellVmaxMod;" + b_Cellmax.strModule() + "\r\n");
+            strArray.add(datetime + ";CellVmaxCell;" + b_Cellmax.strCell() + "\r\n");
+            strArray.add(datetime + ";CellVmaxVolt;" + b_Cellmax.strVolts(3) + "\r\n");
+            strArray.add(datetime + ";CellVmaxTemp;" + b_Cellmax.strTemperature() + "\r\n");
+            strArray.add(datetime + ";CellVminMod;" + b_Cellmin.strModule() + "\r\n");
+            strArray.add(datetime + ";CellVminCell;" + b_Cellmin.strCell() + "\r\n");
+            strArray.add(datetime + ";CellVminVolt;" + b_Cellmin.strVolts(3) + "\r\n");
+            strArray.add(datetime + ";CellVminTemp;" + b_Cellmin.strTemperature() + "\r\n");
             strArray.add(datetime + ";ChargeVDC;" + c_ChargeVDC.str() + "\r\n");
             strArray.add(datetime + ";ChargeVAC;" + c_ChargeVAC.str() + "\r\n");
             strArray.add(datetime + ";ChargeADC;" + c_ChargeADC.str() + "\r\n");
             strArray.add(datetime + ";ChargeAAC;" + c_ChargeAAC.str() + "\r\n");
             strArray.add(datetime + ";ChargeTemp1;" + c_ChargeTemp1.str() + "\r\n");
             strArray.add(datetime + ";ChargeTemp2;" + c_ChargeTemp2.str() + "\r\n");
+            strArray.add(datetime + ";BMUCapAh0;" + bmu_CapAh0.str() + "\r\n");
+            strArray.add(datetime + ";BMURemAh0;" + bmu_RemAh0.str() + "\r\n");
+            strArray.add(datetime + ";BMURemAh1;" + bmu_RemAh1.str() + "\r\n");
+            strArray.add(datetime + ";CapAh0;" + b_CapAh0.str() + "\r\n");
+            strArray.add(datetime + ";RemAh0;" + b_RemAh0.str() + "\r\n");
+            strArray.add(datetime + ";CapAh1;" + b_CapAh1.str() + "\r\n");
+            strArray.add(datetime + ";RemAh1;" + b_RemAh1.str() + "\r\n");
+            strArray.add(datetime + ";BatteryV0;" + b_Volts0.str() + "\r\n");
+            strArray.add(datetime + ";BatteryV1;" + b_Volts1.str() + "\r\n");
+            strArray.add(datetime + ";SoC10;" + b_SoC10.str() + "\r\n");
+            strArray.add(datetime + ";SoC11;" + b_SoC11.str() + "\r\n");
+            strArray.add(datetime + ";Pause1min;" + p1_Time.str() + "\r\n");
+            strArray.add(datetime + ";Pause1Volts;" + p1_Volts.str() + "\r\n");
+            strArray.add(datetime + ";Pause1Ah;" + p1_Ah.str() + "\r\n");
+            strArray.add(datetime + ";Pause1SoC;" + p1_SoC.str() + "\r\n");
+            strArray.add(datetime + ";Pause2min;" + p2_Time.str() + "\r\n");
+            strArray.add(datetime + ";Pause2Volts;" + p2_Volts.str() + "\r\n");
+            strArray.add(datetime + ";Pause2Ah;" + p2_Ah.str() + "\r\n");
+            strArray.add(datetime + ";Pause2SoC;" + p2_SoC.str() + "\r\n");
+            strArray.add(datetime + ";ChargeCapAh;" + p12_CapAh.str() + "\r\n");
+
             strArray.add(datetime + ";PIDCount;" + m_newPIDs + "\r\n");
+            if (i_OCV.equals("old")) strArray.add(datetime + ";OCVNew;" + "0" + "\r\n");
+            else strArray.add(datetime + ";OCVNew;" + "1" + "\r\n");
+            if (i_RangeUnits.equals("km")) strArray.add(datetime + ";RangeMiles;" + "0" + "\r\n");
+            else strArray.add(datetime + ";RangeMiles;" + "1" + "\r\n");
+            if (i_OdoUnits.equals("km")) strArray.add(datetime + ";OdoMiles;" + "0" + "\r\n");
+            else strArray.add(datetime + ";OdoMiles;" + "1" + "\r\n");
             strArray.add("Stop");
             String[] str = new String[strArray.size()];
             int i = 0;
@@ -4050,34 +4184,74 @@ public class MainActivity extends AppCompatActivity {
         if (fileCalc != null && fileCalc.exists()) {
             ArrayList<String> strArray = new ArrayList<>();
             strArray.add(fileCalc.toString());
-            strArray.add(datetime + ";B W;" + b_Watts.str() + "\r\n");
+            strArray.add(datetime + ";B A;" + c_AmpsCal.str() + "\r\n");
+            strArray.add(datetime + ";B W;" + c_WattsCal.str() + "\r\n");
             strArray.add(datetime + ";B WAvg;" + b_Wavg.str() + "\r\n");
             strArray.add(datetime + ";M W;" + m_Watts.str() + "\r\n");
             strArray.add(datetime + ";M WAvg;" + m_Wavg.str() + "\r\n");
             strArray.add(datetime + ";T W;" + t_W.str() + "\r\n");
-            strArray.add(datetime + ";C Ah;" + c_AhRem.str() + "\r\n");
-            strArray.add(datetime + ";B Ah;" + b_AhRem.str() + "\r\n");
-            strArray.add(datetime + ";M Ah;" + m_AhRem.str() + "\r\n");
-            strArray.add(datetime + ";C Wh;" + c_WhRem.str() + "\r\n");
-            strArray.add(datetime + ";B Wh;" + b_WhRem.str() + "\r\n");
-            strArray.add(datetime + ";M Wh;" + m_WhRem.str() + "\r\n");
-            strArray.add(datetime + ";T Wh;" + t_WhReq.str() + "\r\n");
-            strArray.add(datetime + ";C Wh/km;" + c_Whkm.str() + "\r\n");
+            strArray.add(datetime + ";C CapAh;" + c_Ah.capStr() + "\r\n");
+            strArray.add(datetime + ";B CapAh;" + b_Ah.capStr() + "\r\n");
+            strArray.add(datetime + ";M CapAh;" + m_Ah.capStr() + "\r\n");
+            strArray.add(datetime + ";T CapAh;" + t_Ah.capStr() + "\r\n");
+            strArray.add(datetime + ";BMU CapAh;" + bmu_Ah.capStr() + "\r\n");
+            strArray.add(datetime + ";NMC CapAh;" + nmc_Ah.capStr() + "\r\n");
+            strArray.add(datetime + ";C Ah;" + c_Ah.remStr() + "\r\n");
+            strArray.add(datetime + ";B Ah;" + b_Ah.remStr() + "\r\n");
+            strArray.add(datetime + ";M Ah;" + m_Ah.remStr() + "\r\n");
+            strArray.add(datetime + ";T Ah;" + t_Ah.remStr() + "\r\n");
+            strArray.add(datetime + ";BMU Ah;" + bmu_Ah.remStr() + "\r\n");
+            strArray.add(datetime + ";NMC Ah;" + nmc_Ah.remStr() + "\r\n");
+            strArray.add(datetime + ";C Wh;" + c_Ah.remWhStr() + "\r\n");
+            strArray.add(datetime + ";B Wh;" + b_Ah.remWhStr() + "\r\n");
+            strArray.add(datetime + ";M Wh;" + m_Ah.remWhStr() + "\r\n");
+            strArray.add(datetime + ";T Wh;" + t_Ah.remWhStr() + "\r\n");
+            strArray.add(datetime + ";BMU Wh;" + bmu_Ah.remWhStr() + "\r\n");
+            strArray.add(datetime + ";NMC Wh;" + nmc_Ah.remWhStr() + "\r\n");
+            strArray.add(datetime + ";C Wh10;" + c_Ah.remWh10Str() + "\r\n");
+            strArray.add(datetime + ";B Wh10;" + b_Ah.remWh10Str() + "\r\n");
+            strArray.add(datetime + ";M Wh10;" + m_Ah.remWh10Str() + "\r\n");
+            strArray.add(datetime + ";T Wh10;" + t_Ah.remWh10Str() + "\r\n");
+            strArray.add(datetime + ";BMU Wh10;" + bmu_Ah.remWh10Str() + "\r\n");
+            strArray.add(datetime + ";NMC Wh10;" + nmc_Ah.remWh10Str() + "\r\n");
+            strArray.add(datetime + ";C CapWh;" + c_Ah.capWhStr() + "\r\n");
+            strArray.add(datetime + ";B CapWh;" + b_Ah.capWhStr() + "\r\n");
+            strArray.add(datetime + ";M CapWh;" + m_Ah.capStr() + "\r\n");
+            strArray.add(datetime + ";T CapWh;" + t_Ah.capStr() + "\r\n");
+            strArray.add(datetime + ";BMU CapWh;" + bmu_Ah.capWhStr() + "\r\n");
+            strArray.add(datetime + ";NMC CapWh;" + nmc_Ah.capWhStr() + "\r\n");
+            strArray.add(datetime + ";M SoCavg;" + m_SoCavg.str() + "\r\n");
+            strArray.add(datetime + ";C SoC;" + b_Ah.SoCStr() + "\r\n");
+            strArray.add(datetime + ";B SoC;" + b_Ah.SoCStr() + "\r\n");
+            strArray.add(datetime + ";M SoC;" + m_Ah.SoCStr() + "\r\n");
+            strArray.add(datetime + ";T SoC;" + t_Ah.SoCStr() + "\r\n");
+            strArray.add(datetime + ";BMU SoC;" + bmu_Ah.SoCStr() + "\r\n");
+            strArray.add(datetime + ";NMC SoC;" + nmc_Ah.SoCStr() + "\r\n");
+            strArray.add(datetime + ";C Wh/km;" + c_Ah.WhkmStr() + "\r\n");
+            strArray.add(datetime + ";C Wh/kmAux;" + c_Ah.WhkmStr() + "\r\n");
             strArray.add(datetime + ";B Wh/km;" + b_Whkm.str() + "\r\n");
-            strArray.add(datetime + ";B Wh/kmAux;" + b_WhkmAux.str() + "\r\n");
+            strArray.add(datetime + ";B Wh/kmAux;" + b_Ah.WhkmStr() + "\r\n");
             strArray.add(datetime + ";M Wh/km;" + m_Whkm.str() + "\r\n");
-            strArray.add(datetime + ";M Wh/kmAux;" + m_WhkmAux.str() + "\r\n");
-            strArray.add(datetime + ";T Wh/km;" + t_Whkm.str() + "\r\n");
+            strArray.add(datetime + ";M Wh/kmAux;" + m_Ah.WhkmStr() + "\r\n");
+            strArray.add(datetime + ";T Wh/km;" + t_Ah.WhkmStr() + "\r\n");
+            strArray.add(datetime + ";T Wh/kmAux;" + t_Ah.WhkmStr() + "\r\n");
+            strArray.add(datetime + ";BMU Wh/km;" + bmu_Ah.WhkmStr() + "\r\n");
+            strArray.add(datetime + ";BMU Wh/kmAux;" + bmu_Ah.WhkmStr() + "\r\n");
+            strArray.add(datetime + ";NMC Wh/kmAux;" + nmc_Ah.WhkmStr() + "\r\n");
+            strArray.add(datetime + ";C RR;" + c_Ah.RRStr() + "\r\n");
+            strArray.add(datetime + ";C RRtest;" + c_RRtest.str() + "\r\n");
+            strArray.add(datetime + ";B RR;" + b_Ah.RRStr() + "\r\n");
+            strArray.add(datetime + ";M RR;" + m_Ah.RRStr() + "\r\n");
+            strArray.add(datetime + ";T RR;" + t_Ah.RRStr() + "\r\n");
+            strArray.add(datetime + ";BMU RR;" + bmu_Ah.RRStr() + "\r\n");
+            strArray.add(datetime + ";NMC RR;" + nmc_Ah.RRStr() + "\r\n");
             strArray.add(datetime + ";M Odometer;" + m_Odo.str() + "\r\n");
             strArray.add(datetime + ";C kmTest;" + c_kmTest.str() + "\r\n");
             strArray.add(datetime + ";M km;" + m_km.str() + "\r\n");
             strArray.add(datetime + ";M kmTest;" + m_kmTest.str() + "\r\n");
             strArray.add(datetime + ";T km;" + t_km.str() + "\r\n");
-            strArray.add(datetime + ";C RR;" + c_RR.str() + "\r\n");
-            strArray.add(datetime + ";C RRtest;" + c_RRtest.str() + "\r\n");
-            strArray.add(datetime + ";B RR;" + b_RR.str() + "\r\n");
-            strArray.add(datetime + ";M RR;" + m_RR.str() + "\r\n");
-            strArray.add(datetime + ";T RR;" + t_RR.str() + "\r\n");
+            strArray.add(datetime + ";T reqR;" + t_reqkm.str() + "\r\n");
+            strArray.add(datetime + ";T Slope;" + t_Slope.str() + "\r\n");
             strArray.add(datetime + ";M Wind;" + m_Wind.str() + "\r\n");
             strArray.add(datetime + ";M Aux;" + m_AuxW.str() + "\r\n");
             strArray.add(datetime + ";E N;" + e_N.str() + "\r\n");
@@ -4085,55 +4259,39 @@ public class MainActivity extends AppCompatActivity {
             strArray.add(datetime + ";M ekg/s;" + m_Error.str() + "\r\n");
             strArray.add(datetime + ";M eN;" + e_N.str() + "\r\n");
             strArray.add(datetime + ";M eW;" + e_Watts.str() + "\r\n");
-            strArray.add(datetime + ";C Margin;" + c_Margin.str() + "\r\n");
-            strArray.add(datetime + ";T Margin;" + i_Margin.str() + "\r\n");
-            strArray.add(datetime + ";T RRChg;" + c_Margin.str() + "\r\n");
+            strArray.add(datetime + ";C Margin;" + i_Margin.str() + "\r\n");
+            strArray.add(datetime + ";T Margin;" + t_Margin.str() + "\r\n");
+            strArray.add(datetime + ";T RRChg;" + t_Margin.str() + "\r\n");
             strArray.add(datetime + ";T Speed;" + t_Speed.str() + "\r\n");
             strArray.add(datetime + ";Avg Speed;" + c_SpdShnAvg.str() + "\r\n");
             strArray.add(datetime + ";C AvgSpeed;" + c_Speed0Avg.str() + "\r\n");
-            strArray.add(datetime + ";B AhDis;" + b_AhRem.str() + "\r\n");
-            strArray.add(datetime + ";B AhChg;" + b_AhRem.str() + "\r\n");
-            strArray.add(datetime + ";C SoCDis;" + c_SoC2.str() + "\r\n");
-            strArray.add(datetime + ";C SoCChg;" + c_SoC2.str() + "\r\n");
-            strArray.add(datetime + ";B CapDisAh;" + b_CapAhCheck.str() + "\r\n");
-            strArray.add(datetime + ";B CapChgAh;" + b_CapAhCheck.str() + "\r\n");
-            strArray.add(datetime + ";B CapAhChk;" + b_CapAhCheck.str() + "\r\n");
+            strArray.add(datetime + ";C AvgSpdRR;" + c_SpdAvgRR.str() + "\r\n");
+            strArray.add(datetime + ";B CapEst;" + b_CapEst.str() + "\r\n");
+            strArray.add(datetime + ";B AhDis;" + b_Ah.remStr() + "\r\n");
+            strArray.add(datetime + ";B AhChg;" + b_Ah.remStr() + "\r\n");
+            strArray.add(datetime + ";C SoCDis;" + b_SoC2.str() + "\r\n");
+            strArray.add(datetime + ";C SoCChg;" + b_SoC2.str() + "\r\n");
+            strArray.add(datetime + ";B CapDisAh;" + c_Ah.capStr() + "\r\n");
+            strArray.add(datetime + ";B CapChgAh;" + c_Ah.capStr() + "\r\n");
+            strArray.add(datetime + ";B CapAhChk;" + c_Ah.capStr() + "\r\n");
+            strArray.add(datetime + ";B AavgRR;0\r\n");
             strArray.add(datetime + ";C Load;" + i_Load.str() + "\r\n");
             strArray.add(datetime + ";C Roll;" + c_Roll.str() + "\r\n");
             strArray.add(datetime + ";C Drag;" + c_Drag.str() + "\r\n");
-            strArray.add(datetime + ";B A;" + c_AmpsCal.str() + "\r\n");
             strArray.add(datetime + ";C RegW;" + c_RegW.str() + "\r\n");
             strArray.add(datetime + ";M Acc;" + m_AccW.str() + "\r\n");
-            strArray.add(datetime + ";M AccAvg;" + m_AccWavg.str() + "\r\n");
+            strArray.add(datetime + ";M AccAvg;" + m_AccW.str() + "\r\n");
             strArray.add(datetime + ";M SoC;" + m_SoCavg.str() + "\r\n");
-            strArray.add(datetime + ";M SoCavg;" + m_SoCavg.str() + "\r\n");
             strArray.add(datetime + ";M LowAmins;" + m_OCtimer.str() + "\r\n");
-            strArray.add(datetime + ";M CapSoCsum;" + m_CellAhmin.strSoCsum() + "\r\n");
-            strArray.add(datetime + ";M CapAhsum;" + m_CapAhsum.str() + "\r\n");
-            strArray.add(datetime + ";M CapAh;" + m_CellAhmin.strAh2() + "\r\n");
             strArray.add(datetime + ";M CapTemp;" + m_CapTemp.str() + "\r\n");
-            strArray.add(datetime + ";M CModule;" + m_CellAhmin.strModule() + "\r\n");
-            strArray.add(datetime + ";M CCell;" + m_CellAhmin.strCell() + "\r\n");
-            strArray.add(datetime + ";M CVolts;" + m_CellAhmin.strVoltage(3) + "\r\n");
-            strArray.add(datetime + ";M CTemp;" + m_CellAhmin.strTemperature() + "\r\n");
-            strArray.add(datetime + ";M CSoC;" + m_CellAhmin.strSoC() + "\r\n");
-            strArray.add(datetime + ";M Cap1SoCUsed;" + m_CapSoCUsed.str() + "\r\n");
-            strArray.add(datetime + ";M Cap1AhUsed;" + m_CapAhUsed.str() + "\r\n");
-            strArray.add(datetime + ";M Cap1Ahmax;" + m_Cap1Ahmax.str() + "\r\n");
-            strArray.add(datetime + ";M Cap1Ahavg;" + m_Cap1Ahavg.str() + "\r\n");
-            strArray.add(datetime + ";M Cap1Ahmin;" + m_Cap1Ahmin.str() + "\r\n");
-            strArray.add(datetime + ";M Cap2Ahmax;" + m_Cap2Ahmax.str() + "\r\n");
-            strArray.add(datetime + ";M Cap2Ahavg;" + m_Cap2Ahavg.str() + "\r\n");
-            strArray.add(datetime + ";M Cap2Ahmin;" + m_Cap2Ahmin.str() + "\r\n");
-            strArray.add(datetime + ";M BatAh1max;" + m_BatAh1max.str() + "\r\n");
-            strArray.add(datetime + ";M BatAh1avg;" + m_BatAh1avg.str() + "\r\n");
-            strArray.add(datetime + ";M BatAh1min;" + m_BatAh1min.str() + "\r\n");
-            strArray.add(datetime + ";M BatSummax;" + m_BatSummax.str() + "\r\n");
-            strArray.add(datetime + ";M BatSumavg;" + m_BatSumavg.str() + "\r\n");
-            strArray.add(datetime + ";M BatSummin;" + m_BatSummin.str() + "\r\n");
-            strArray.add(datetime + ";M BatAh2max;" + m_BatAh2max.str() + "\r\n");
-            strArray.add(datetime + ";M BatAh2avg;" + m_BatAh2avg.str() + "\r\n");
-            strArray.add(datetime + ";M BatAh2min;" + m_BatAh2min.str() + "\r\n");
+            strArray.add(datetime + ";M Cap1AhUsed;" + b_Ah.usedStr() + "\r\n");
+            strArray.add(datetime + ";M Cap1Ahmax;" + b_Cellmax.strAh1() + "\r\n");
+            strArray.add(datetime + ";M Cap1Ahavg;" + b_Cellavg.strAh1() + "\r\n");
+            strArray.add(datetime + ";M Cap1Ahmin;" + b_Cellmin.strAh1() + "\r\n");
+            strArray.add(datetime + ";M Cap2Ahsum;" + m_Ah.sumStr() + "\r\n");
+            strArray.add(datetime + ";M Cap2Ahmax;" + m_CAh2max.strAh2() + "\r\n");
+            strArray.add(datetime + ";M Cap2Ahavg;" + m_CAh2avg.strAh2() + "\r\n");
+            strArray.add(datetime + ";M Cap2Ahmin;" + m_CAh2min.strAh2() + "\r\n");
             strArray.add("Stop");
             String[] str = new String[strArray.size()];
             int i = 0;

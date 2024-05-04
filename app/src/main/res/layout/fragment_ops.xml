@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <TableLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:stretchColumns="0,1,2,3"
+        android:verticalSpacing="5dp"
+        tools:ignore="HardcodedText,SpUsage,TooManyViews,UselessParent">
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="Operations"
+                android:textColor="#ffffff"
+                android:textSize="26sp" />
+
+            <TextView
+                android:id="@+id/ops_date"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#ffffff"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/ops_time"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#ffffff"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/ops_step"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#ffffff"
+                android:textSize="16sp" />
+        </TableRow>
+
+    </TableLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:background="#FFE1E1E1" />
+
+    <TableLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:stretchColumns="0,1"
+        android:verticalSpacing="5dp"
+        tools:ignore="HardcodedText,SpUsage,TooManyViews">
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="Capacity"
+                android:textColor="#ffffff"
+                android:textSize="24sp" />
+
+            <TextView
+                android:id="@+id/ops_cap"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#ffffff"
+                android:textSize="24sp" />
+
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="Remaining"
+                android:textColor="#ffffff"
+                android:textSize="24sp" />
+
+            <TextView
+                android:id="@+id/ops_rem"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#ffffff"
+                android:textSize="24sp" />
+
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="Pause"
+                android:textColor="#ffffff"
+                android:textSize="24sp" />
+
+            <TextView
+                android:id="@+id/ops_pause"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#ffffff"
+                android:textSize="24sp" />
+
+        </TableRow>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:background="#FFE1E1E1" />
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="Wh/km"
+                android:textColor="#ffffff"
+                android:textSize="24sp" />
+
+            <TextView
+                android:id="@+id/ops_whkm"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#ffffff"
+                android:textSize="24sp" />
+
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="SoC"
+                android:textColor="#ffffff"
+                android:textSize="24sp" />
+
+            <TextView
+                android:id="@+id/ops_soc"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#ffffff"
+                android:textSize="24sp" />
+
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="RR"
+                android:textColor="#ffffff"
+                android:textSize="24sp" />
+
+            <TextView
+                android:id="@+id/ops_rr"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#ffffff"
+                android:textSize="24sp" />
+
+        </TableRow>
+
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:background="#FFE1E1E1" />
+
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="Volts"
+                android:textColor="#ffffff"
+                android:textSize="24sp" />
+
+            <TextView
+                android:id="@+id/ops_volts"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#ffffff"
+                android:textSize="24sp" />
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="Amps"
+                android:textColor="#ffffff"
+                android:textSize="24sp" />
+
+            <TextView
+                android:id="@+id/ops_amps"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#ffffff"
+                android:textSize="24sp" />
+
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="kW"
+                android:textColor="#ffffff"
+                android:textSize="24sp" />
+
+            <TextView
+                android:id="@+id/ops_watts"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#ffffff"
+                android:textSize="24sp" />
+
+        </TableRow>
+
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:background="#FFE1E1E1" />
+
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="Cells:"
+                android:textColor="#ffffff"
+                android:textSize="24sp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#ffffff"
+                android:textSize="24sp" />
+
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="lowest V"
+                android:textColor="#ffffff"
+                android:textSize="24sp" />
+
+            <TextView
+                android:id="@+id/ops_cellv"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#ffffff"
+                android:textSize="24sp" />
+
+
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="highest oC"
+                android:textColor="#ffffff"
+                android:textSize="24sp" />
+
+            <TextView
+                android:id="@+id/ops_cellt"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#ffffff"
+                android:textSize="24sp" />
+
+        </TableRow>
+
+    </TableLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:background="#FFE1E1E1" />
+
+</LinearLayout>

@@ -14,6 +14,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 
 
@@ -23,6 +24,8 @@ public class FragmentCap2 extends Fragment {
     private static final TextView[] calcView = new TextView[25];
     private static final ListView[] instructions = new ListView[1];
     private static final String[] listInstructions = new String[9];
+
+    private final static DecimalFormat decFix0 = new DecimalFormat("##0");
 
     static FragmentCap2 newInstance() {
         return new FragmentCap2();
@@ -102,11 +105,15 @@ public class FragmentCap2 extends Fragment {
 
         Refresh(MainActivity.arrayOBD, 0);
     }
+    private static String computeMinutesWithHeater() {
+        if (MainActivity.b_SoC1.dbl > 14.5)
+            return decFix0.format(60 * MainActivity.c_Ah.cap * (MainActivity.c_Ah.SoC() - 14.5) / 1200 );
+        else return ("0");
+    }
 
     private static void StepInstructions(final int instruction) {
 
-        if (!MainActivity.computeMinutesWithHeater().equals("-1"))
-            listInstructions[1] = ("Run the heater for about " + MainActivity.computeMinutesWithHeater() + " min.\n");
+            listInstructions[1] = ("Run the heater for about " + computeMinutesWithHeater() + " min.\n");
 
         if (instruction == 8) {
             listInstructions[8] = ("The measurement is complete.\n" +
@@ -146,7 +153,7 @@ public class FragmentCap2 extends Fragment {
             };
 
             instructions[0].setAdapter(arrayAdapter);
-            instructions[0].setSelection(instruction);
+            instructions[0].setSelection(instruction - 1);
 
         } catch (Exception e) {
             Log.e(TAG, "instructions" + e);

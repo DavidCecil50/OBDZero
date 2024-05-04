@@ -14,11 +14,11 @@ class Cell {
     int cell = 0;
     double temperature = -50;
     double volts = 0;
-    double SoC = 0;
+    double SoC = -1;
     double p_SoC = 0;
     double SoCsum = 0;
-    double capAh1 = 0;
-    double capAh2 = 0;
+    double Ah1 = 0;
+    double Ah2 = 0;
     boolean isFound = false;
     boolean isNew = false;
 
@@ -39,15 +39,15 @@ class Cell {
     }
 
     String strTemperature() {
-        if (isFound && temperature > -50) {
+        if (isFound ) {
             return decFix1.format(temperature);
         } else {
             return "";
         }
     }
 
-    String strVoltage(int dec) {
-        if (isFound && volts > 0) {
+    String strVolts(int dec) {
+        if (isFound) {
             switch (dec) {
                 case 1:
                     return decFix1.format(volts);
@@ -67,7 +67,7 @@ class Cell {
 
     String strSoC() {
         if (isFound) {
-            return decFix2.format(SoC);
+            return decFix1.format(SoC);
         } else {
             return "";
         }
@@ -75,7 +75,7 @@ class Cell {
 
     String strSoCsum() {
         if (isFound) {
-            return decFix2.format(SoCsum);
+            return decFix1.format(SoCsum);
         } else {
             return "";
         }
@@ -83,7 +83,7 @@ class Cell {
 
     String strAh1() {
         if (isFound) {
-            return decFix1.format(capAh1);
+            return decFix1.format(Ah1);
         } else {
             return "";
         }
@@ -91,7 +91,7 @@ class Cell {
 
     String strAh2() {
         if (isFound) {
-            return decFix1.format(capAh2);
+            return decFix1.format(Ah2);
         } else {
             return "";
         }

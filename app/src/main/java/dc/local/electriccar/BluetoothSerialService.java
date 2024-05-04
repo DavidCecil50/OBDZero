@@ -294,6 +294,10 @@ class BluetoothSerialService {
         runReset = false;
     }
 
+    void wakeUp() {
+        writeOBD("ATZ");
+    }
+
     // This starts the loop that collects the PIDs one line at a time David Cecil
     void startCollector() {
         runReset = false;

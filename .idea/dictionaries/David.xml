@@ -36,6 +36,7 @@
       <w>cellmin</w>
       <w>chademo</w>
       <w>chigh</w>
+      <w>chrg</w>
       <w>clow</w>
       <w>cmax</w>
       <w>cmeas</w>
@@ -46,9 +47,11 @@
       <w>csum</w>
       <w>ctimer</w>
       <w>dirc</w>
+      <w>directorys</w>
       <w>dscreen</w>
       <w>electriccar</w>
       <w>entryvalues</w>
+      <w>folderectorys</w>
       <w>fulltime</w>
       <w>gridview</w>
       <w>higho</w>

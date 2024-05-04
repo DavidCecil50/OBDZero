@@ -1,0 +1,581 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:ignore="HardcodedText,SpUsage,TooManyViews">
+
+    <TableLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:stretchColumns="0,1,2,3"
+        android:verticalSpacing="5dp">
+
+        <TableRow tools:ignore="UselessParent">
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="Charging"
+                android:textColor="#FFFFFF"
+                android:textSize="20sp" />
+
+            <TextView
+                android:id="@+id/charge00"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/charge01"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/charge02"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+        </TableRow>
+
+    </TableLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:background="#FFE1E1E1" />
+
+    <TableLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:stretchColumns="0,1,2"
+        android:verticalSpacing="5dp">
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="Current"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/charge10"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="Cells"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="avg"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/charge20"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="max"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/charge30"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="min"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/charge40"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="Charge"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="BMU"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/charge50"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+        </TableRow>
+
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:background="#FFE1E1E1" />
+
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="Start"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="BMU"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/charge60"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="Capacity"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="Car"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/charge70"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="Volts"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="battery"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/charge80"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="cell"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/charge85"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+        </TableRow>
+
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:background="#FFE1E1E1" />
+
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="1st pause"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="length"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/charge90"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="battery"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="volts"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/charge100"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="SoC"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/charge110"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="Ah"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/charge120"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="2nd pause"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="length"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/charge130"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="battery"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="volts"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/charge140"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="SoC"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/charge150"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="Ah"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/charge160"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+        </TableRow>
+
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:background="#FFE1E1E1" />
+
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="New"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="BMU"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/charge170"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="Capacity"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="Car"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/charge180"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:focusable="false"
+                android:gravity="center"
+                android:text="measured"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/charge190"
+                android:focusable="false"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp" />
+
+        </TableRow>
+
+    </TableLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:background="#FFE1E1E1" />
+
+</LinearLayout>

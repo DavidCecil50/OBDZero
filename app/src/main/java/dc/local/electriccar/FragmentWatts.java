@@ -2,6 +2,7 @@ package dc.local.electriccar;
 
 import androidx.fragment.app.Fragment;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -25,7 +26,7 @@ public class FragmentWatts extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_watts, container, false);
         textWatts[0] = view.findViewById(R.id.text_watts);
-        textWatts[0].setText(decFix1.format(MainActivity.b_WAvgAux.dbl / 1000.0));
+        textWatts[0].setText(decFix1.format(MainActivity.b_Wavg.dbl / 1000.0));
         textWatts[1] = view.findViewById(R.id.text_whkm);
         textWatts[2] = view.findViewById(R.id.text_speedavg);
         buttons[0] = view.findViewById(R.id.whkm_units);
@@ -44,15 +45,14 @@ public class FragmentWatts extends Fragment {
         writeWhkm();
     }
 
+    @SuppressLint("SetTextI18n")
     void writeWhkm() {
-        double whkm = 110;
-        if (MainActivity.c_Speed0Avg.dbl > 0) whkm = MainActivity.b_WAvgAux.dbl/MainActivity.c_Speed0Avg.dbl;
         if (MainActivity.milesPerkWh) {
             buttons[0].setText("miles/kWh");
-            textWatts[1].setText(decFix0.format(621.37119 / whkm));
+            textWatts[1].setText(decFix0.format(621.37119 / MainActivity.b_Whkm.dbl));
         } else {
             buttons[0].setText("Wh/km");
-            textWatts[1].setText(decFix0.format(whkm));
+            textWatts[1].setText(decFix0.format(MainActivity.b_Whkm.dbl));
         }
     }
 
@@ -61,6 +61,7 @@ public class FragmentWatts extends Fragment {
         writeSpeed();
     }
 
+    @SuppressLint("SetTextI18n")
     void writeSpeed() {
         if (MainActivity.mph) {
             buttons[1].setText("mph");
@@ -72,19 +73,17 @@ public class FragmentWatts extends Fragment {
     }
 
     static void Refresh() {
-        double watts = MainActivity.b_WAvgAux.dbl/1000.0;
+        double watts = MainActivity.b_Wavg.dbl/1000.0;
         if (watts > 10) {
             textWatts[0].setText(decFix0.format(watts));
         } else {
             textWatts[0].setText(decFix1.format(watts));
         }
 
-        double whkm = 110;
-        if (MainActivity.c_Speed0Avg.dbl > 0) whkm = MainActivity.b_WAvgAux.dbl/MainActivity.c_Speed0Avg.dbl;
         if (MainActivity.milesPerkWh) {
-            textWatts[1].setText(decFix0.format(621.37119 / whkm));
+            textWatts[1].setText(decFix0.format(621.37119 / MainActivity.b_Whkm.dbl));
         } else {
-            textWatts[1].setText(decFix0.format(whkm));
+            textWatts[1].setText(decFix0.format(MainActivity.b_Whkm.dbl));
         }
 
         if (MainActivity.mph) {

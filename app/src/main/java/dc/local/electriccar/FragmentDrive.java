@@ -3,6 +3,7 @@ package dc.local.electriccar;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -24,7 +25,6 @@ import java.text.DecimalFormat;
 
 public class FragmentDrive extends Fragment {
     private static final String TAG = "FragmentDrive:";
-    private static Context appContext = null;
     private static final EditText[] textDistance = new EditText[1];
     private static final TextView[] textDrive = new TextView[4];
     private static final Button[] buttons = new Button[2];
@@ -60,13 +60,25 @@ public class FragmentDrive extends Fragment {
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-
         if (getActivity() != null)
             getActivity().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
 
-        appContext = getContext();
+        Context appContext = getContext();
 
         Refresh();
+
+        if (MainActivity.checkRRMiles && MainActivity.t_Margin.dbl > 10) {
+            CharSequence text = "Check the if the range shown on the instrument panel is in miles. " +
+                    "If so change the range units in the initials values menu";
+            int duration = Toast.LENGTH_LONG;
+            Toast toast = null;
+            if (appContext != null) {
+                toast = Toast.makeText(appContext.getApplicationContext(), text, duration);
+            }
+            if (toast != null) {
+                toast.show();
+            }
+        }
 
         textDistance[0].setOnFocusChangeListener((v, hasFocus) -> {
             mEditing = hasFocus;
@@ -77,22 +89,22 @@ public class FragmentDrive extends Fragment {
                 (v, actionId, event) -> {
                     mEditing = true;
                     if (isSoftKeyboardFinishedAction(actionId, event)) {
-                        double drvNumber;
+                        double kmReq;
 
-                        if (MainActivity.miles) drvNumber = 0.621371192 * MainActivity.t_km.dbl;
-                        else drvNumber = MainActivity.t_km.dbl;
+                        if (MainActivity.miles) kmReq = 0.621371192 * MainActivity.t_km.dbl;
+                        else kmReq = MainActivity.t_km.dbl;
 
                         // the user is done typing.
                         String drvDistance = v.getText().toString();
                         try {
-                            drvNumber = Double.parseDouble(drvDistance);
+                            kmReq = Double.parseDouble(drvDistance);
                         } catch (NumberFormatException e) {
                             Log.e(TAG, "editing not a number" + e);
                         }
 
                         if (MainActivity.miles) {
-                            MainActivity.t_km.dbl = 1.609344 * drvNumber;
-                        } else MainActivity.t_km.dbl = drvNumber;
+                            MainActivity.t_km.dbl = 1.609344 * kmReq;
+                        } else MainActivity.t_km.dbl = kmReq;
                         MainActivity.m_km.dbl = 0;
 
                         textDistance[0].setCursorVisible(false);
@@ -114,17 +126,18 @@ public class FragmentDrive extends Fragment {
         writeMiles();
     }
 
+    @SuppressLint("SetTextI18n")
     void writeMiles() {
         if (MainActivity.miles) {
             buttons[0].setText("miles");
             textDistance[0].setText(decFix0.format(0.621371192 * MainActivity.t_km.dbl));
             textDrive[0].setText("miles");
-            textDrive[1].setText(decFix0.format(0.621371192 * MainActivity.c_Margin.dbl));
+            textDrive[1].setText(decFix0.format(0.621371192 * MainActivity.t_Margin.dbl));
         } else {
             buttons[0].setText("km");
             textDistance[0].setText(decFix0.format(MainActivity.t_km.dbl));
             textDrive[0].setText("km");
-            textDrive[1].setText(decFix0.format(MainActivity.c_Margin.dbl));
+            textDrive[1].setText(decFix0.format(MainActivity.t_Margin.dbl));
         }
     }
 
@@ -133,6 +146,7 @@ public class FragmentDrive extends Fragment {
         writeMph();
     }
 
+    @SuppressLint("SetTextI18n")
     void writeMph() {
         if (MainActivity.mph) {
             buttons[1].setText("mph");
@@ -143,35 +157,36 @@ public class FragmentDrive extends Fragment {
         }
     }
 
+    @SuppressLint("SetTextI18n")
     static void Refresh() {
         if (!mEditing) {
-            String drvSpeed;
+            String drvSpd;
             if (MainActivity.t_Speed.dbl < 10)
-                if (MainActivity.mph) drvSpeed = "6";
-                else drvSpeed = "10";
+                if (MainActivity.mph) drvSpd = "6";
+                else drvSpd = "10";
             else {
                 if (MainActivity.t_Speed.dbl > 130) {
-                    if (MainActivity.mph) drvSpeed = "80";
-                    else drvSpeed = "130";
+                    if (MainActivity.mph) drvSpd = "80";
+                    else drvSpd = "130";
                 } else {
                     if (MainActivity.mph)
-                        drvSpeed = decFix0.format(0.621371192 * MainActivity.t_Speed.dbl);
-                    else drvSpeed = decFix0.format(MainActivity.t_Speed.dbl);
+                        drvSpd = decFix0.format(0.621371192 * MainActivity.t_Speed.dbl);
+                    else drvSpd = decFix0.format(MainActivity.t_Speed.dbl);
                 }
             }
-            textDrive[2].setText(drvSpeed);
+            textDrive[2].setText(drvSpd);
 
-             if (MainActivity.c_Margin.dbl > 0) {
-                if (MainActivity.t_WhReq.dbl < 0.95 * MainActivity.c_WhRem10.dbl)
+            if (MainActivity.t_reqkm.dbl > 0) {
+                if (MainActivity.t_Ah.RR() > 1.05 * MainActivity.t_reqkm.dbl)
                     textDrive[2].setTextColor(Color.rgb(100, 255, 100));
-                else if (MainActivity.t_WhReq.dbl < 1.05 * MainActivity.c_WhRem10.dbl)
+                else if (MainActivity.t_Ah.RR() > 0.95 * MainActivity.t_reqkm.dbl)
                     textDrive[2].setTextColor(Color.rgb(255, 255, 255));
-                else if (MainActivity.t_WhReq.dbl < 1.15 * MainActivity.c_WhRem10.dbl)
+                else if (MainActivity.t_Ah.RR() > 0.9 * MainActivity.t_reqkm.dbl)
                     textDrive[2].setTextColor(Color.rgb(255, 202, 28));
                 else textDrive[2].setTextColor(Color.rgb(255, 100, 100));
             } else {
-                 textDrive[2].setTextColor(Color.rgb(255, 100, 100));
-             }
+                textDrive[2].setTextColor(Color.rgb(255, 100, 100));
+            }
 
             if (MainActivity.t_km.dbl > 0) {
                 textDrive[3].setText("Suggested speed to the station");
@@ -182,18 +197,11 @@ public class FragmentDrive extends Fragment {
             if (MainActivity.miles) {
                 textDistance[0].setText(decFix0.format(0.621371192 * MainActivity.t_km.dbl));
             } else textDistance[0].setText(decFix0.format(MainActivity.t_km.dbl));
+
             if (MainActivity.miles) {
-                textDrive[1].setText(decFix0.format(0.621371192 * MainActivity.c_Margin.dbl));
-            } else textDrive[1].setText(decFix0.format(MainActivity.c_Margin.dbl));
+                textDrive[1].setText(decFix0.format(0.621371192 * MainActivity.t_Margin.dbl));
+            } else textDrive[1].setText(decFix0.format(MainActivity.t_Margin.dbl));
 
-        }
-
-        if (MainActivity.checkRangeUnits && MainActivity.c_Margin.dbl > 10) {
-            CharSequence text = "Check the if the range shown on the instrument panel is in miles. " +
-                    "If so change the range units in the initials values menu";
-            int duration = Toast.LENGTH_LONG;
-            Toast toast = Toast.makeText(appContext.getApplicationContext(), text, duration);
-            toast.show();
         }
     }
 

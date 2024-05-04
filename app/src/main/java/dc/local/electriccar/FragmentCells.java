@@ -70,39 +70,54 @@ public class FragmentCells extends Fragment {
         }
     }
 
-    static void Refresh(final Cell[] cells, boolean cellsData,
-                 double Vhigh, double Vlow,
-                 double Thigh, double Tlow,
-                 double Ah1high, double Ah1low,
-                 double Ah2high, double Ah2low) {
-        int index = 10;
-
+    static void Refresh(final Cell[] cells, boolean cellsData) {
         if (cellsData) {
+            int index = 10;
+            double maxVolts = 0;
+            double maxTemp = -50;
+            double maxAh1 = 0;
+            double maxAh2 = 0;
+            double minVolts = 5;
+            double minTemp = 100;
+            double minAh1 = 200;
+            double minAh2 = 200;
+            for (Cell aCell : cells) {
+                if (aCell.isFound) {
+                    if (aCell.volts > maxVolts) maxVolts = aCell.volts;
+                    if (aCell.temperature > maxTemp) maxTemp = aCell.temperature;
+                    if (aCell.Ah1 > maxAh1) maxAh1 = aCell.Ah1;
+                    if (aCell.Ah2 > maxAh2) maxAh2 = aCell.Ah2;
+                    if (aCell.volts < minVolts) minVolts = aCell.volts;
+                    if (aCell.temperature < minTemp) minTemp = aCell.temperature;
+                    if (aCell.Ah1 < minAh1) minAh1 = aCell.Ah1;
+                    if (aCell.Ah2 < minAh2) minAh2 = aCell.Ah2;
+                }
+            }
             for (int i = 0; i < 12; i++) {
                 numbers[index] = cells[i * 8].strModule();
                 index++;
-                if (Ah2high > 0) {
+                if (minAh2 > 0) {
                     for (int j = 0; j < 8; j++) {
                         numbers[index] = cells[i * 8 + j].strAh2();
-                        high[index] = cells[i * 8 + j].capAh2 >= Ah2high;
-                        low[index] = cells[i * 8 + j].capAh2 <= Ah2low;
+                        high[index] = cells[i * 8 + j].Ah2 >= maxAh2;
+                        low[index] = cells[i * 8 + j].Ah2 <= minAh2;
                         index++;
                     }
                     numbers[index] = "Ah2";
-                } else if (Ah1high > 0) {
+                } else if (minAh1 > 0) {
                     for (int j = 0; j < 8; j++) {
                         numbers[index] = cells[i * 8 + j].strAh1();
-                        high[index] = cells[i * 8 + j].capAh1 >= Ah1high;
-                        low[index] = cells[i * 8 + j].capAh1 <= Ah1low;
+                        high[index] = cells[i * 8 + j].Ah1 >= maxAh1;
+                        low[index] = cells[i * 8 + j].Ah1 <= minAh1;
                         index++;
                     }
                     numbers[index] = "Ah1";
                 } else {
                     for (int j = 0; j < 8; j++) {
-                        numbers[index] = cells[i * 8 + j].strVoltage(2);
-                        if (Vhigh - Vlow > 0.02) {
-                            high[index] = cells[i * 8 + j].volts >= Vhigh;
-                            low[index] = cells[i * 8 + j].volts <= Vlow;
+                        numbers[index] = cells[i * 8 + j].strVolts(2);
+                        if (maxVolts - minVolts > 0.02) {
+                            high[index] = cells[i * 8 + j].volts >= maxVolts;
+                            low[index] = cells[i * 8 + j].volts <= minVolts;
                         } else {
                             high[index] = false;
                             low[index] = false;
@@ -116,9 +131,9 @@ public class FragmentCells extends Fragment {
                 index++;
                 for (int j = 0; j < 8; j++) {
                     numbers[index] = cells[i * 8 + j].strTemperature();
-                    if (Thigh - Tlow > 1.5) {
-                        highoC[index] = cells[i * 8 + j].temperature >= Thigh - 0.25;
-                        lowoC[index] = cells[i * 8 + j].temperature <= Tlow + 0.25;
+                    if (maxTemp - minTemp > 1.5) {
+                        highoC[index] = cells[i * 8 + j].temperature >= maxTemp - 0.25;
+                        lowoC[index] = cells[i * 8 + j].temperature <= minTemp + 0.25;
                     } else {
                         highoC[index] = false;
                         lowoC[index] = false;
@@ -155,7 +170,6 @@ public class FragmentCells extends Fragment {
             } catch (Exception e) {
                 Log.e(TAG, "refreshing" + e);
             }
-
         } else {
             CharSequence text = "There is no cell data yet or " +
                     "this model and year does not provide cell data.";

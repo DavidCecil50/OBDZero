@@ -1,5 +1,6 @@
 package dc.local.electriccar;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -8,18 +9,22 @@ import android.widget.TextView;
 
 import androidx.fragment.app.Fragment;
 
+import java.text.DecimalFormat;
+
 public class FragmentVolts extends Fragment {
     private static final TextView[] texts = new TextView[9];
 
+    private final static DecimalFormat decFix0 = new DecimalFormat("##0");
     static FragmentVolts newInstance() {
         return new FragmentVolts();
     }
 
+    @SuppressLint("SetTextI18n")
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_ah, container, false);
         texts[0] = view.findViewById(R.id.number_1);
-        texts[0].setText(MainActivity.b_Volts.str());
+        texts[0].setText(decFix0.format(MainActivity.b_Volts.dbl));
         texts[1] = view.findViewById(R.id.units_1);
         texts[1].setText(" V");
         texts[2] = view.findViewById(R.id.number_2);
@@ -42,7 +47,7 @@ public class FragmentVolts extends Fragment {
     }
 
     static void Refresh() {
-        texts[0].setText(MainActivity.b_Volts.str());
+        texts[0].setText(decFix0.format(MainActivity.b_Volts.dbl));
         texts[2].setText(MainActivity.b_BatVmax.str());
         texts[4].setText(MainActivity.b_BatVmin.str());
     }

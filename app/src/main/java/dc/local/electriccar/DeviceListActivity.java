@@ -16,16 +16,22 @@
 
 package dc.local.electriccar;
 
+import static android.os.Build.VERSION.SDK_INT;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+
+import androidx.core.app.ActivityCompat;
+
 import java.util.Set;
 
 /**
@@ -41,7 +47,7 @@ public class DeviceListActivity extends Activity {
     // Return Intent extra
     public static final String EXTRA_DEVICE_ADDRESS = "device_address";
 
-    @SuppressLint("MissingPermission")
+    @SuppressLint("SetTextI18n")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -63,25 +69,28 @@ public class DeviceListActivity extends Activity {
 
         TextView textDevices = findViewById(R.id.text_devices);
 
-        // Get the local Bluetooth adapter
-        // Member fields
-        BluetoothAdapter mBtAdapter = BluetoothAdapter.getDefaultAdapter();
-
         // Get a set of currently paired devices
-        Set<BluetoothDevice> pairedDevices = mBtAdapter.getBondedDevices();
-
-        // If there are paired devices, add each one to the ArrayAdapter
-        numberDevices = pairedDevices.size();
-        if (numberDevices > 0) {
-            for (BluetoothDevice device : pairedDevices) {
-                mPairedDevicesArrayAdapter.add(device.getName() + "\n" + device.getAddress());
-            }
-            String otherDevices = getResources().getText(R.string.other_devices).toString();
-            textDevices.setText(otherDevices);
+        if (SDK_INT > 30 && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+            textDevices.setText("OBDZero does not have the necessary Bluetooth permission.");
         } else {
-            String noDevices = getResources().getText(R.string.none_paired).toString();
-            mPairedDevicesArrayAdapter.add(noDevices);
-            textDevices.setText(noDevices);
+            // Get the local Bluetooth adapter
+            // Member fields
+            BluetoothAdapter mBtAdapter = BluetoothAdapter.getDefaultAdapter();
+
+            Set<BluetoothDevice> pairedDevices = mBtAdapter.getBondedDevices();
+            // If there are paired devices, add each one to the ArrayAdapter
+            numberDevices = pairedDevices.size();
+            if (numberDevices > 0) {
+                for (BluetoothDevice device : pairedDevices) {
+                    mPairedDevicesArrayAdapter.add(device.getName() + "\n" + device.getAddress());
+                }
+                String otherDevices = "If the dongle you want is not on the list. Scan and pair other dongles using the phone settings then run OBDZero again.";
+                textDevices.setText(otherDevices);
+            } else {
+                String noDevices = "No dongles have been paired. Scan and pair using the phone settings then run OBDZero again.";
+                mPairedDevicesArrayAdapter.add(noDevices);
+                textDevices.setText(noDevices);
+            }
         }
     }
 
