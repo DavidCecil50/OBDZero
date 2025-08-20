@@ -5,9 +5,15 @@ android {
     defaultConfig {
         applicationId "dc.local.electriccar"
         minSdkVersion 14
+<<<<<<< Updated upstream
         targetSdkVersion 30
         versionCode 20
         versionName "3.86"
+=======
+        targetSdkVersion 34
+        versionCode 40
+        versionName "4.12"
+>>>>>>> Stashed changes
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -23,8 +29,14 @@ dependencies {
     androidTestImplementation('androidx.test.espresso:espresso-core:3.4.0', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
+<<<<<<< Updated upstream
     implementation 'androidx.appcompat:appcompat:1.3.1'
     implementation 'com.google.android.material:material:1.4.0'
+=======
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    //noinspection GradleDependency
+    implementation 'com.google.android.material:material:1.11.0'
+>>>>>>> Stashed changes
     testImplementation 'junit:junit:4.13.2'
     implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
 }

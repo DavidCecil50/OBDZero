@@ -40,6 +40,7 @@ public class FragmentOBD extends Fragment {
         appContext = getContext();
     }
 
+<<<<<<< Updated upstream
     static void Refresh(ArrayList<String> arrayOBD) {
         int position = list[0].getFirstVisiblePosition();
         arrayOBD.add("");
@@ -56,6 +57,10 @@ public class FragmentOBD extends Fragment {
 
         if (MainActivity.checkOdoUnits) {
             CharSequence text = "Check the if the Odometer shown above is in miles and not km. " +
+=======
+        if (MainActivity.checkOdoMiles) {
+            CharSequence text = "Check if the Odometer shown above is in miles and not km. " +
+>>>>>>> Stashed changes
                     "If so change the odometer units to miles in the initials values menu";
             int duration = Toast.LENGTH_LONG;
             Toast toast = Toast.makeText(appContext.getApplicationContext(), text, duration);
@@ -68,6 +73,24 @@ public class FragmentOBD extends Fragment {
             int duration = Toast.LENGTH_LONG;
             Toast toast = Toast.makeText(appContext.getApplicationContext(), text, duration);
             toast.show();
+<<<<<<< Updated upstream
+=======
+            }
+
+        }
+
+
+    static void Refresh(ArrayList<String> arrayOBD) {
+       int position = list[0].getFirstVisiblePosition();
+       arrayOBD.add("");
+        try {
+            ArrayAdapter<String> listAdapter = new ArrayAdapter<>(appContext,
+                    R.layout.list_text_14left, arrayOBD);
+            list[0].setAdapter(listAdapter);
+            list[0].setSelection(position);
+        } catch (Exception e) {
+            Log.e(TAG, "refreshing" + e);
+>>>>>>> Stashed changes
         }
 
     }

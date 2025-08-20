@@ -203,6 +203,14 @@ public class MainActivity extends AppCompatActivity {
     static final OBD i_Spd100 = new OBD(95, "km/h", 0);
     static final OBD i_Margin = new OBD(10, "km", 0);
     static final OBD i_Load = new OBD(150, "kg", 0);
+<<<<<<< Updated upstream
+=======
+    static final OBD i_Record = new OBD(5, "sec", 0);
+    static final OBD i_Capacity = new OBD(84, "Ah", 1);
+    static final OBD i_RemAh = new OBD(0, "Ah", 1);
+
+    static String i_Chem = "LEV";
+>>>>>>> Stashed changes
     static String i_RangeUnits = "km";
     static String i_OdoUnits = "km";
 
@@ -300,8 +308,18 @@ public class MainActivity extends AppCompatActivity {
     private static final OBD p_BatSoCavg = new OBD(50, "%", 2);
     private static final OBD p_BatSoCmin = new OBD(50, "%", 2);
 
+<<<<<<< Updated upstream
     private static final Cell b_CellVmin = new Cell();
     private static final Cell b_CellVmax = new Cell();
+=======
+    static Ah c_Ah = new Ah(0, 0, 0, -1);
+    static Ah b_Ah = new Ah(0, 0, 0, -1);
+    static Ah m_Ah = new Ah(0, 0, 0, -1);
+    static Ah t_Ah = new Ah(0, 0, 0, -1);
+    static Ah w_Ah = new Ah(0, 0, 0, -1);
+    static Ah bmu_Ah = new Ah(0, 0, 0, -1);
+    static Ah nmc_Ah = new Ah(0, 0, 0, -1);
+>>>>>>> Stashed changes
 
     private static final OBD e_N = new OBD(80, "N", 0);
     private static final OBD e_W = new OBD(e_N.dbl * c_SpdAvg.dbl, "W", 0);
@@ -1454,6 +1472,7 @@ public class MainActivity extends AppCompatActivity {
                     else c_RestRange.dbl = aPID.intPID[7];
                     break;
                 case "373":
+<<<<<<< Updated upstream
                     b_BatVmax.dbl = (aPID.intPID[0] + 210) / 100.0;
                     b_BatVmin.dbl = (aPID.intPID[1] + 210) / 100.0;
                     b_Amps.dbl = (aPID.intPID[2] * 256 + aPID.intPID[3] - 32768) / 100.0;
@@ -1462,6 +1481,22 @@ public class MainActivity extends AppCompatActivity {
                     if (aPID.intPID[4] > 9)
                         b_Volts.dbl = (aPID.intPID[4] * 256 + aPID.intPID[5]) / 10.0;
                     b_Watts.dbl = c_AmpsCal.dbl * b_Volts.dbl;
+=======
+                    if (aPID.intr[0] > 52 && aPID.intr[0] < 220)
+                        b_BatVmax.dbl = (aPID.intr[0] + 210) / 100.0;
+                    if (aPID.intr[1] > 52 && aPID.intr[1] < 220)
+                        b_BatVmin.dbl = (aPID.intr[1] + 210) / 100.0;
+                    if (b_BatVmin.dbl > 0 && b_BatVmax.dbl > 0)
+                        b_BatVavg.dbl = (b_BatVmin.dbl + b_BatVmax.dbl) / 2.0;
+                    b_Amps68.dbl = (aPID.intr[2] * 256 + aPID.intr[3] - 32768) / 100.0;
+                    if (b_Amps68.dbl > -250 && b_Amps68.dbl < 250) {
+                        c_AmpsCal.dbl = -(aPID.intr[2] * 256 + aPID.intr[3] - 32700) / 100.0;
+                    }
+                    if (aPID.intr[4] > 9) {
+                        b_Volts.dbl = (aPID.intr[4] * 256 + aPID.intr[5]) / 10.0;
+                        c_WattsCal.dbl = c_AmpsCal.dbl * b_Volts.dbl;
+                    }
+>>>>>>> Stashed changes
                     break;
                 case "374":
                     c_SoC1.dbl = (aPID.intPID[0] - 10.0) / 2.0;
@@ -1763,8 +1798,14 @@ public class MainActivity extends AppCompatActivity {
                     if (module != 6 && module != 12) {
                         index = (module - 1) * 8 + 4;
                         listCells[index].module = module;
+<<<<<<< Updated upstream
                         listCells[index].cell = 5;
                         listCells[index].volts = (aPID.intPID[4] * 256 + aPID.intPID[5] + 420) / 200.0;
+=======
+                        listCells[index].cell = 1;
+                        if ((aPID.intr[4] == 0 && aPID.intr[5] > 120) || (aPID.intr[4] == 1 && aPID.intr[5] < 164))
+                            listCells[index].volts = (aPID.intr[4] * 256 + aPID.intr[5] + 420) / 200.0;
+>>>>>>> Stashed changes
                         listCells[index].isFound = true;
                         listCells[index].isNew = true;
 
@@ -1775,8 +1816,14 @@ public class MainActivity extends AppCompatActivity {
 
                         index = (module - 1) * 8 + 5;
                         listCells[index].module = module;
+<<<<<<< Updated upstream
                         listCells[index].cell = 6;
                         listCells[index].volts = (aPID.intPID[6] * 256 + aPID.intPID[7] + 420) / 200.0;
+=======
+                        listCells[index].cell = 2;
+                        if ((aPID.intr[6] == 0 && aPID.intr[7] > 120) || (aPID.intr[6] == 1 && aPID.intr[7] < 164))
+                            listCells[index].volts = (aPID.intr[6] * 256 + aPID.intr[7] + 420) / 200.0;
+>>>>>>> Stashed changes
                         listCells[index].isFound = true;
                         listCells[index].isNew = true;
 
@@ -1790,13 +1837,20 @@ public class MainActivity extends AppCompatActivity {
                     if (module != 6 && module != 12) {
                         index = (module - 1) * 8 + 6;
                         listCells[index].module = module;
+<<<<<<< Updated upstream
                         listCells[index].cell = 7;
                         listCells[index].volts = (aPID.intPID[4] * 256 + aPID.intPID[5] + 420) / 200.0;
+=======
+                        listCells[index].cell = 3;
+                        if ((aPID.intr[4] == 0 && aPID.intr[5] > 120) || (aPID.intr[4] == 1 && aPID.intr[5] < 164))
+                            listCells[index].volts = (aPID.intr[4] * 256 + aPID.intr[5] + 420) / 200.0;
+>>>>>>> Stashed changes
                         listCells[index].isFound = true;
                         listCells[index].isNew = true;
 
                         index = (module - 1) * 8 + 7;
                         listCells[index].module = module;
+<<<<<<< Updated upstream
                         listCells[index].cell = 8;
                         listCells[index].volts = (aPID.intPID[6] * 256 + aPID.intPID[7] + 420) / 200.0;
                         listCells[index].isFound = true;
@@ -1804,6 +1858,71 @@ public class MainActivity extends AppCompatActivity {
 
                     }
                     break;
+=======
+                        listCells[index].cell = 4;
+                        if ((aPID.intr[6] == 0 && aPID.intr[7] > 120) || (aPID.intr[6] == 1 && aPID.intr[7] < 164))
+                            listCells[index].volts = (aPID.intr[6] * 256 + aPID.intr[7] + 420) / 200.0;
+                        listCells[index].isFound = true;
+                        listCells[index].isNew = true;
+
+                        if (module != 6 && module != 12) {
+                            listSensors[index].module = module;
+                            listSensors[index].sensor = 4;
+                            listSensors[index].temperature = aPID.intr[2] - 50;
+                            listSensors[index].isNew = true;
+                        }
+                        break;
+                    case "6E3":
+                        if (module != 6 && module != 12) {
+                            index = (module - 1) * 8 + 4;
+                            listCells[index].module = module;
+                            listCells[index].cell = 5;
+                            if ((aPID.intr[4] == 0 && aPID.intr[5] > 120) || (aPID.intr[4] == 1 && aPID.intr[5] < 164))
+                                listCells[index].volts = (aPID.intr[4] * 256 + aPID.intr[5] + 420) / 200.0;
+                            listCells[index].isFound = true;
+                            listCells[index].isNew = true;
+
+                            listSensors[index].module = module;
+                            listSensors[index].sensor = 5;
+                            listSensors[index].temperature = aPID.intr[1] - 50;
+                            listSensors[index].isNew = true;
+
+                            index = (module - 1) * 8 + 5;
+                            listCells[index].module = module;
+                            listCells[index].cell = 6;
+                            if ((aPID.intr[6] == 0 && aPID.intr[7] > 120) || (aPID.intr[6] == 1 && aPID.intr[7] < 164))
+                                listCells[index].volts = (aPID.intr[6] * 256 + aPID.intr[7] + 420) / 200.0;
+                            listCells[index].isFound = true;
+                            listCells[index].isNew = true;
+
+                            listSensors[index].module = module;
+                            listSensors[index].sensor = 6;
+                            listSensors[index].temperature = aPID.intr[2] - 50;
+                            listSensors[index].isNew = true;
+                        }
+                        break;
+                    case "6E4":
+                        if (module != 6 && module != 12) {
+                            index = (module - 1) * 8 + 6;
+                            listCells[index].module = module;
+                            listCells[index].cell = 7;
+                            if ((aPID.intr[4] == 0 && aPID.intr[5] > 120) || (aPID.intr[4] == 1 && aPID.intr[5] < 164))
+                                listCells[index].volts = (aPID.intr[4] * 256 + aPID.intr[5] + 420) / 200.0;
+                            listCells[index].isFound = true;
+                            listCells[index].isNew = true;
+
+                            index = (module - 1) * 8 + 7;
+                            listCells[index].module = module;
+                            listCells[index].cell = 8;
+                            if ((aPID.intr[6] == 0 && aPID.intr[7] > 120) || (aPID.intr[6] == 1 && aPID.intr[7] < 164))
+                                listCells[index].volts = (aPID.intr[6] * 256 + aPID.intr[7] + 420) / 200.0;
+                            listCells[index].isFound = true;
+                            listCells[index].isNew = true;
+
+                        }
+                        break;
+                }
+>>>>>>> Stashed changes
             }
         }
     }
@@ -1983,6 +2102,7 @@ public class MainActivity extends AppCompatActivity {
             d_AhCal.dbl = 0;
             p_Speed.dbl = c_Speed0.dbl;
 
+<<<<<<< Updated upstream
             m_CellAhmin.module = 0;
             m_CellAhmin.cell = 0;
             m_CellAhmin.volts = b_BatVmin.dbl;
@@ -2008,8 +2128,71 @@ public class MainActivity extends AppCompatActivity {
                 aCell.SoCsum = 0;
                 aCell.p_SoC = aCell.SoC;
                 aCell.capAh2 = 0;
+=======
+        b_Ah.cap = c_Ah.cap;
+        m_Ah.cap = c_Ah.cap;
+        t_Ah.cap = c_Ah.cap;
+        w_Ah.cap = c_Ah.cap;
+
+        b_Ah.rem = c_Ah.rem;
+        m_Ah.rem = c_Ah.rem;
+        t_Ah.rem = c_Ah.rem;
+        w_Ah.rem = c_Ah.rem;
+
+        b_Ah.Whkm = c_Ah.Whkm;
+        m_Ah.Whkm = c_Ah.Whkm;
+        t_Ah.Whkm = c_Ah.Whkm;
+        w_Ah.Whkm = c_Ah.Whkm;
+        bmu_Ah.Whkm = c_Ah.Whkm;
+
+        c_RRtest.dbl = c_Ah.RR();
+
+        c_Speed0Avg.dbl = 30;
+        c_SpdAvgRR.dbl = c_Speed0Avg.dbl;
+        t_Speed.dbl = c_SpdAvgRR.dbl;
+
+        b_Wavg.dbl = c_Ah.Whkm * c_Speed0Avg.dbl;
+        m_Wavg.dbl = b_Wavg.dbl;
+        b_Whkm.dbl = b_Wavg.dbl / c_Speed0Avg.dbl;
+        m_Whkm.dbl = m_Wavg.dbl / c_Speed0Avg.dbl;
+
+        computeAuxW();
+        b_WavgRR.dbl = b_Wavg.dbl - m_AuxW.dbl;
+        m_WavgRR.dbl = b_WavgRR.dbl;
+
+
+        boolean found = false;
+        double SoC = 0;
+        double rem;
+
+        nmc_Ah.cap = i_Capacity.dbl;
+
+        if (i_RemAh.dbl > 0) {
+            if ((currentTimeMillis() - i_Time) < 30000) {
+                nmc_Ah.rem = i_RemAh.dbl;
+                found = true;
+            } else if (m_SoCavg.dbl > 0) {
+                if (nmc_Ah.cap > 0) SoC = 100.0 * i_RemAh.dbl / nmc_Ah.cap;
+                if (Math.abs(m_SoCavg.dbl - SoC) < 5) {
+                    nmc_Ah.rem = i_RemAh.dbl;
+                    found = true;
+                }
+            } else if (bmu_Ah.cap > 0 && bmu_Ah.rem > 0) {
+                rem = nmc_Ah.cap + bmu_Ah.cap - bmu_Ah.rem;
+                if (Math.abs(i_RemAh.dbl - rem) < 5) {
+                    nmc_Ah.rem = i_RemAh.dbl;
+                    found = true;
+                }
+            } else if (c_Ah.cap > 0 && c_Ah.rem > 0) {
+                rem = nmc_Ah.cap - c_Ah.cap + c_Ah.rem;
+                if (Math.abs(i_RemAh.dbl - rem) < 5) {
+                    nmc_Ah.rem = i_RemAh.dbl;
+                    found = true;
+                }
+>>>>>>> Stashed changes
             }
 
+<<<<<<< Updated upstream
             c_AhRem.dbl = c_SoC2.dbl * c_CapAh.dbl / 100.0;
             b_AhRem.dbl = c_AhRem.dbl;
             m_AhRem.dbl = c_AhRem.dbl;
@@ -2017,10 +2200,14 @@ public class MainActivity extends AppCompatActivity {
             b_WhRem.dbl = c_WhRem.dbl;
             m_WhRem.dbl = c_WhRem.dbl;
             t_WhReq.dbl = c_WhRem.dbl;
+=======
+        nmc_Ah.Whkm = c_Ah.Whkm;
+>>>>>>> Stashed changes
 
             c_CapWh.dbl = c_CapAh.dbl * b_Vavg;
             computeCarRR();
 
+<<<<<<< Updated upstream
             c_RRtest.dbl = c_RR.dbl;
             b_RR.dbl = c_RR.dbl;
             m_RR.dbl = c_RR.dbl;
@@ -2031,6 +2218,16 @@ public class MainActivity extends AppCompatActivity {
             m_WhkmAux.dbl = c_Whkm.dbl;
 
             computeAuxW();
+=======
+        m_Wind.dbl = 0.5;
+
+        m_Error.dbl = 0.5;
+        e_N.dbl = m_Error.dbl * c_Speed0Avg.dbl / 3.6;
+        e_Watts.dbl = e_N.dbl * c_Speed0Avg.dbl / 3.6;
+
+        c_Mass.dbl = 1120 + i_Load.dbl;
+        c_Roll.dbl = 9.89 * 0.02 * c_Mass.dbl;
+>>>>>>> Stashed changes
 
             c_SpdAvg.dbl = 20.0;
             b_Wavg.dbl = c_Whkm.dbl * c_SpdAvg.dbl;
@@ -2056,6 +2253,17 @@ public class MainActivity extends AppCompatActivity {
             if (m_CapSoCUsed.dbl < 0 || m_CapSoCUsed.dbl > 100) m_CapSoCUsed.dbl = 0;
             m_CapAhUsed.dbl = c_CapAh.dbl * (m_CapSoCUsed.dbl) / 100.0;
 
+<<<<<<< Updated upstream
+=======
+        if (c_Ah.cap > 0 && c_Ah.rem > 0 && c_Ah.Whkm > 0 && m_SoCavg.dbl > -1 && b_SoC2.dbl > -1 && c_Odo.dbl > 0) {
+            if (i_Chem.equals("NMC") && !found) {
+                CharSequence text = "NMC: please check the remaining Ah" +
+                        "OBDZero was not able to find a good value.";
+                int duration = Toast.LENGTH_LONG;
+                Toast toast = Toast.makeText(this.getApplicationContext(), text, duration);
+                toast.show();
+            }
+>>>>>>> Stashed changes
             iniComputing = false;
             runComputing = true;
             btnFour.setBackgroundColor(clrDarkGreen);
@@ -2078,6 +2286,7 @@ public class MainActivity extends AppCompatActivity {
 
             computeRegW(m_AccW.dbl);
 
+<<<<<<< Updated upstream
             if (c_Speed0.dbl > 0) {
                 m_W.dbl = computeModel(c_Speed0.dbl, m_AccW.dbl);
                 if (d_Second < 9)
@@ -2085,6 +2294,16 @@ public class MainActivity extends AppCompatActivity {
                 if (e_N.dbl > 300) e_N.dbl = 300;
                 if (e_N.dbl < -150) e_N.dbl = -150;
                 if (b_Volts.dbl > 0) m_AmpsCal.dbl = m_W.dbl / b_Volts.dbl;
+=======
+            if (c_Speed0.dbl > 0 && !errorAC) {
+                m_Watts.dbl = computeModel(c_Speed0.dbl, m_AccW.dbl, m_AuxW.dbl);
+                if (d_Second < 10)
+                    // The difference between the effect reported by the car and the effect computed by the model
+                    m_Error.dbl += 0.000002 * d_Second * (c_WattsCal.dbl - m_Watts.dbl);
+                if (m_Error.dbl > 20) m_Error.dbl = 20;
+                if (m_Error.dbl < -20) m_Error.dbl = -20;
+                if (b_Volts.dbl > 0) m_Amps.dbl = m_Watts.dbl / b_Volts.dbl;
+>>>>>>> Stashed changes
             } else {
                 m_W.dbl = b_Watts.dbl;
                 m_AmpsCal.dbl = c_AmpsCal.dbl;
@@ -2097,7 +2316,17 @@ public class MainActivity extends AppCompatActivity {
 
             computeAh();
 
+<<<<<<< Updated upstream
             computeWh();
+=======
+            computeSpeedWhkm();
+
+            computeRRWhkm();
+
+            checkRR();
+
+            computeWind(c_Speed0.dbl, m_AccW.dbl, m_AuxW.dbl);
+>>>>>>> Stashed changes
 
             computeDistances();
 
@@ -2123,6 +2352,17 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+<<<<<<< Updated upstream
+=======
+    private void updateLowAmpTimer() {
+        if (c_AmpsCal.dbl > -1.0 && c_AmpsCal.dbl < 1.0) {
+            if (d_Second < 10) m_OCtimer.dbl += 60 * d_Hour;
+        } else {
+            m_OCtimer.dbl = 0;
+        }
+    }
+
+>>>>>>> Stashed changes
     private void computeAuxW() {
         double auxW = 160.0;
         if (c_BrakeOn.in() == 2) auxW += 100.0;
@@ -2164,6 +2404,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+<<<<<<< Updated upstream
     private double computeModel(double speed, double accW) {
         c_Drag.dbl = 0.75 * (1.2978 - 0.0046 * c_AirSensor.dbl) / 2.0;
         double m_v = speed / 3.6; //Convert to m/s.
@@ -2198,6 +2439,12 @@ public class MainActivity extends AppCompatActivity {
         } else {
             m_Wind.dbl = -m_v;
         }
+=======
+    private double computeModel(double speed, double acc, double aux) {
+        c_Drag.dbl = 0.75 * (1.2978 - 0.0046 * c_AirSensor.dbl) / 2.0;
+        double m_v = speed / 3.6; //Convert to m/s.
+        return c_Drag.dbl * m_v * m_v * m_v + m_Error.dbl * m_v * m_v + c_Roll.dbl * m_v + acc + aux;
+>>>>>>> Stashed changes
     }
 
     private void computeAh() {
@@ -2207,9 +2454,26 @@ public class MainActivity extends AppCompatActivity {
             b_AhRem.dbl -= d_AhCal.dbl;
             m_AhRem.dbl -= (m_AmpsCal.dbl + mp_AmpsCal.dbl) * d_Hour / 2.0;
         } else {
+<<<<<<< Updated upstream
             d_AhCal.dbl = (c_AmpsCal.dbl + p_AmpsCal.dbl) * 0.03333 / 2.0;
             b_AhRem.dbl = c_AhRem.dbl;
             m_AhRem.dbl = c_AhRem.dbl;
+=======
+            d_AhCal.dbl = (c_AmpsCal.dbl + p_Amps.dbl) * 180.0 / 3600.0 / 2.0;
+            m_Ah.rem -= ((m_Amps.dbl + mp_Amps.dbl) * 180.0 / 3600.0 / 2.0);
+        }
+        p_Amps.dbl = c_AmpsCal.dbl;
+        mp_Amps.dbl = m_Amps.dbl;
+
+        b_Ah.rem -= d_AhCal.dbl;
+
+        if (m_OCtimer.dbl > 10.0) {
+            if (m_SoCavg.dbl > -1 && m_SoCavg.dbl < 112) {
+                nmc_Ah.rem = m_SoCavg.dbl * nmc_Ah.cap / 100.0;
+            }
+        } else {
+            nmc_Ah.rem -= d_AhCal.dbl;
+>>>>>>> Stashed changes
         }
         p_AmpsCal.dbl = c_AmpsCal.dbl;
         mp_AmpsCal.dbl = m_AmpsCal.dbl;
@@ -2226,6 +2490,54 @@ public class MainActivity extends AppCompatActivity {
         c_CapWh.dbl = c_CapAh.dbl * (b_V100 + b_V0) / 2.0;
     }
 
+<<<<<<< Updated upstream
+=======
+    private void computeRRWhkm() {
+        if ((c_Gear.in() == 68 || c_Gear.in() == 131 || c_Gear.in() == 50) && d_Second < 10) {
+            double aAdd = 0.0002 * d_Second;
+            double aKeep = 1 - aAdd;
+            c_SpdAvgRR.dbl = aKeep * c_SpdAvgRR.dbl + aAdd * c_Speed0.dbl;
+            if (c_SpdAvgRR.dbl < 1) c_SpdAvgRR.dbl = 1;
+            b_WavgRR.dbl = aKeep * b_WavgRR.dbl + aAdd * (c_WattsCal.dbl - m_AuxW.dbl); //compute the average measured watts while in drive.
+            m_WavgRR.dbl = aKeep * m_WavgRR.dbl + aAdd * (m_Watts.dbl - m_AuxW.dbl); //compute the average model watts while in drive.
+            b_Ah.Whkm = (b_WavgRR.dbl + m_AuxW.dbl) / c_SpdAvgRR.dbl;
+            m_Ah.Whkm = (m_WavgRR.dbl + m_AuxW.dbl) / c_SpdAvgRR.dbl;
+            bmu_Ah.Whkm = b_Ah.Whkm;
+            nmc_Ah.Whkm = b_Ah.Whkm;
+            w_Ah.Whkm = b_Ah.Whkm;
+        }
+    }
+
+    private void checkRR() {
+        if (i_RangeUnits.equals("km") && m_AuxW.dbl < 500) {
+            double test;
+            if (b_Ah.Whkm > 0) c_RRtest.dbl = c_Ah.remWh10() / b_Ah.Whkm;
+            if (c_Ah.RR() > 0 && c_RRtest.dbl > 0) test = c_RRtest.dbl / c_Ah.RR();
+            else test = 1.0;
+            checkRRMiles = test > 0.58 && test < 0.68;
+        } else {
+            checkRRMiles = false;
+        }
+    }
+
+    private void computeWind(double speed, double acc, double aux) {
+        double m_v = speed / 3.6; //Convert to m/s.
+        double w_v = m_v + m_Wind.dbl;
+        double watts = c_WattsCal.dbl;
+        if (d_Second < 10) {
+            if (speed > 0) {
+                watts = c_Drag.dbl * (w_v) * (w_v) * (w_v) + c_Roll.dbl * m_v + acc + aux;
+                m_Wind.dbl += 0.000002 * d_Second * (c_WattsCal.dbl - watts);
+                if (m_Wind.dbl > 10) m_Wind.dbl = 10;
+                if (m_Wind.dbl < -10) m_Wind.dbl = -10;
+                if (b_Volts.dbl > 0) w_Ah.rem -= d_Hour * watts / b_Volts.dbl;
+            }
+        } else {
+            if (b_Volts.dbl > 0) w_Ah.rem -= watts / b_Volts.dbl / 360.0;
+        }
+    }
+
+>>>>>>> Stashed changes
     private void computeDistances() {
         if (d_Second < 120) { // If there is less than 2 minutes since the last step then assume no data has been lost.
             double dx = (c_Speed0.dbl + p_Speed.dbl) * d_Hour / 2.0;
@@ -2257,6 +2569,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+<<<<<<< Updated upstream
     private void computeRR() {
         if (c_Gear.in() == 4 && d_Second < 10) {
             double aAdd = 4 * d_Hour;
@@ -2303,6 +2616,68 @@ public class MainActivity extends AppCompatActivity {
         } else {
             t_Speed.dbl -= 0.3;
             if (t_Speed.dbl < 49.6) t_Speed.dbl = 49.6;
+=======
+        t_Ah.cap = c_Ah.cap;
+        t_Ah.rem = c_Ah.rem;
+
+        if (t_Speed.dbl < 10) t_Speed.dbl = 10;
+        else if (t_Speed.dbl > 130) t_Speed.dbl = 130;
+
+        t_W.dbl = computeModel(t_Speed.dbl, 0, m_AuxW.dbl);
+        t_Ah.Whkm = t_W.dbl / t_Speed.dbl;
+
+        double v = t_Speed.dbl / 3.6;
+        double a = c_Drag.dbl * v * v * v + m_Error.dbl * v * v + c_Roll.dbl * v - m_AuxW.dbl;
+        t_Slope.dbl = -t_Ah.remWh10() * (2 * c_Drag.dbl * v * v * v + m_Error.dbl * v * v - m_AuxW.dbl) / (a * a);
+
+        if (d_Second < 10) {
+            if (t_Ah.RR() > 0 && t_reqkm.dbl > 0) {
+                if (t_Ah.RR() > t_reqkm.dbl || t_Slope.dbl > 0) {
+                    t_Speed.dbl += 0.02 * d_Second * Math.abs(t_Ah.RR() - t_reqkm.dbl);
+                } else {
+                    t_Speed.dbl -= 0.02 * d_Second * Math.abs(t_Ah.RR() - t_reqkm.dbl);
+                }
+            } else {
+                if (t_Slope.dbl > 0) {
+                    t_Speed.dbl += 0.02 * d_Second;
+                } else {
+                    t_Speed.dbl -= 0.02 * d_Second;
+                }
+            }
+        }
+
+        if (t_Speed.dbl < 10) t_Speed.dbl = 10;
+        else if (t_Speed.dbl > 130) t_Speed.dbl = 130;
+
+        t_W.dbl = computeModel(t_Speed.dbl, 0, m_AuxW.dbl);
+        t_Ah.Whkm = t_W.dbl / t_Speed.dbl;
+    }
+
+
+    private void processCap1() {
+        switch (stepCap1) {
+            case 0:
+                iniCap1();
+                if (b_Ah.used() > 17.5) stepCap1 = 1;
+                break;
+            case 1:
+                iniCap1();
+                if (b_Ah.used() > 20) stepCap1 = 2;
+                break;
+            case 2:
+                if (m_OCtimer.dbl > 10) computeCap1();
+                if (m_OCtimer.dbl > 15) stepCap1 = 3;
+                break;
+            case 3:
+                computeCells1();
+                if (Math.abs(c_AmpsCal.dbl) > 2) stepCap1 = 0;
+                break;
+            case 4:
+                break;
+            default:
+                stepCap1 = 0;
+                break;
+>>>>>>> Stashed changes
         }
     }
 
@@ -2322,6 +2697,81 @@ public class MainActivity extends AppCompatActivity {
         else m_CapSoCUsed.dbl = 0;
         m_CapAhUsed.dbl = c_CapAh.dbl * m_CapSoCUsed.dbl / 100.0;
 
+<<<<<<< Updated upstream
+=======
+    private void computeCells1() {
+        if (cellsData)
+            for (Cell aCell : listCells) {
+                if (100 - aCell.SoC > 0) {
+                    aCell.Ah1 = 100 * b_Ah.used() / (100 - aCell.SoC);
+                }
+            }
+    }
+
+    private void processCap2() {
+        switch (stepCap2) {
+            case 0:
+                iniCap2();
+                if (b_SoC1.dbl < 20 && b_SoC2.dbl < 20) stepCap2 = 1;
+                break;
+            case 1:
+                iniCap2();
+                if (b_SoC1.dbl < 15 && b_SoC2.dbl < 15) stepCap2 = 2;
+                break;
+            case 2:
+                iniCap2();
+                if (m_OCtimer.dbl > 30) {
+                    stepCap2 = 3;
+                }
+                break;
+            case 3:
+                updateSums2();
+                if (c_AmpsCal.dbl < -1) stepCap2 = 4;
+                break;
+            case 4:
+                updateSums2();
+                if ((b_SoC1.dbl > 98 || b_SoC2.dbl > 98) && c_AmpsCal.dbl > -0.1) stepCap2 = 5;
+                break;
+            case 5:
+                updateSums2();
+                if (m_OCtimer.dbl > 0) stepCap2 = 6;
+                break;
+            case 6:
+                updateSums2();
+                if (m_OCtimer.dbl > 25) stepCap2 = 7;
+                break;
+            case 7:
+                updateSums2();
+                if (m_OCtimer.dbl > 10) computeCapacities2();
+                if (m_OCtimer.dbl > 30) stepCap2 = 8;
+                break;
+            case 8:
+                computeCells2();
+                if (Math.abs(c_AmpsCal.dbl) > 2) stepCap2 = 0;
+                break;
+            case 9:
+                break;
+            default:
+                stepCap2 = 0;
+                break;
+        }
+    }
+
+    private void iniCap2() {
+        m_CAh2max = b_Cellmax;
+        m_CAh2avg = b_Cellavg;
+        m_CAh2min = b_Cellmin;
+        m_CAh2max.p_SoC = m_CAh2max.SoC;
+        m_CAh2avg.p_SoC = m_CAh2avg.SoC;
+        m_CAh2min.p_SoC = m_CAh2min.SoC;
+        m_CAh2max.SoCsum = 0;
+        m_CAh2avg.SoCsum = 0;
+        m_CAh2min.SoCsum = 0;
+        m_CAh2max.Ah2 = 0;
+        m_CAh2avg.Ah2 = 0;
+        m_CAh2min.Ah2 = 0;
+        m_Ah.sum = 0;
+>>>>>>> Stashed changes
         if (cellsData) {
             m_CellAhmax.module = b_CellVmax.module;
             m_CellAhmax.cell = b_CellVmax.cell;
@@ -2538,8 +2988,221 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case 8:
                 break;
+<<<<<<< Updated upstream
             default:
                 m_CapStep = 0;
+=======
+            case 2:
+                if (fragNo == FRAG_PID) {
+                    updateFrag(FRAG_PID);
+                } else {
+                    clrLines();
+                    lineOne.setBackgroundColor(Color.WHITE);
+                    textCell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f);
+                    textCell.setText("LEV and NMC");
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_place, FragmentPIDs.newInstance())
+                            .commitNow();
+                    fragNo = FRAG_PID;
+                }
+                break;
+        }
+    }
+
+    @SuppressLint("SetTextI18n")
+    public void selectTwo() {
+        switch (menuTabs) {
+            case 0:
+                if (fragNo == FRAG_WH) {
+                    updateFrag(FRAG_WH);
+                } else {
+                    clrLines();
+                    lineTwo.setBackgroundColor(Color.WHITE);
+                    textCell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 26f);
+                    textCell.setText("Type: " + i_Chem);
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_place, FragmentWh.newInstance())
+                            .commitNow();
+                    fragNo = FRAG_WH;
+                }
+                break;
+            case 1:
+                if (fragNo == FRAG_OBD) {
+                    updateFrag(FRAG_OBD);
+                } else {
+                    prepOBD();
+                    clrLines();
+                    lineTwo.setBackgroundColor(Color.WHITE);
+                    textCell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f);
+                    textCell.setText("Type: " + i_Chem);
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_place, FragmentOBD.newInstance())
+                            .commitNow();
+                    fragNo = FRAG_OBD;
+                }
+                break;
+            case 2:
+                if (fragNo == FRAG_CALC) {
+                    updateFrag(FRAG_CALC);
+                } else {
+                    prepCalc();
+                    clrLines();
+                    lineTwo.setBackgroundColor(Color.WHITE);
+                    textCell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f);
+                    textCell.setText("Type: " + i_Chem);
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_place, FragmentCalc.newInstance())
+                            .commitNow();
+                    fragNo = FRAG_CALC;
+                }
+                break;
+        }
+    }
+
+    @SuppressLint("SetTextI18n")
+    public void selectThree() {
+        switch (menuTabs) {
+            case 0:
+                if (fragNo == FRAG_AH) {
+                    updateFrag(FRAG_AH);
+                } else {
+                    clrLines();
+                    lineThree.setBackgroundColor(Color.WHITE);
+                    textCell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 26f);
+                    textCell.setText("Type: " + i_Chem);
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_place, FragmentAh.newInstance())
+                            .commitNow();
+                    fragNo = FRAG_AH;
+                }
+                break;
+            case 1:
+                if (fragNo == FRAG_CELLS) {
+                    updateFrag(FRAG_CELLS);
+                } else {
+                    clrLines();
+                    lineThree.setBackgroundColor(Color.WHITE);
+                    textCell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f);
+                    textCell.setText("LEV and NMC");
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_place, FragmentCells.newInstance())
+                            .commitNow();
+                    fragNo = FRAG_CELLS;
+                }
+                break;
+            case 2:
+                if (fragNo == FRAG_CHARGE) {
+                    updateFrag(FRAG_CHARGE);
+                } else {
+                    prepCalc();
+                    clrLines();
+                    lineThree.setBackgroundColor(Color.WHITE);
+                    textCell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f);
+                    textCell.setText("warning LEV only");
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_place, FragmentCharge.newInstance())
+                            .commitNow();
+                    fragNo = FRAG_CHARGE;
+                }
+                break;
+        }
+    }
+
+    @SuppressLint("SetTextI18n")
+    public void selectFour() {
+        switch (menuTabs) {
+            case 0:
+                if (fragNo == FRAG_WATTS) {
+                    updateFrag(FRAG_WATTS);
+                } else {
+                    clrLines();
+                    lineFour.setBackgroundColor(Color.WHITE);
+                    textCell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 26f);
+                    textCell.setText("LEV and NMC");
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_place, FragmentWatts.newInstance())
+                            .commitNow();
+                    fragNo = FRAG_WATTS;
+                }
+                break;
+            case 1:
+                if (fragNo == FRAG_VOLTS) {
+                    updateFrag(FRAG_VOLTS);
+                } else {
+                    clrLines();
+                    lineFour.setBackgroundColor(Color.WHITE);
+                    textCell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 26f);
+                    textCell.setText("LEV and NMC");
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_place, FragmentVolts.newInstance())
+                            .commitNow();
+                    fragNo = FRAG_VOLTS;
+                }
+                break;
+            case 2:
+                if (fragNo == FRAG_CAP1) {
+                    updateFrag(FRAG_CAP1);
+                } else {
+                    prepCap1();
+                    clrLines();
+                    lineFour.setBackgroundColor(Color.WHITE);
+                    textCell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f);
+                    textCell.setText("Type: " + i_Chem);
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_place, FragmentCap1.newInstance())
+                            .commitNow();
+                    fragNo = FRAG_CAP1;
+                }
+                break;
+        }
+    }
+
+    @SuppressLint("SetTextI18n")
+    public void selectFive() {
+        switch (menuTabs) {
+            case 0:
+                if (fragNo == FRAG_DRV) {
+                    updateFrag(FRAG_DRV);
+                } else {
+                    clrLines();
+                    lineFive.setBackgroundColor(Color.WHITE);
+                    textCell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 26f);
+                    textCell.setText("Type: " + i_Chem);
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_place, FragmentDrive.newInstance())
+                            .commitNow();
+                    fragNo = FRAG_DRV;
+                }
+                break;
+            case 1:
+                if (fragNo == FRAG_TEMP) {
+                    updateFrag(FRAG_TEMP);
+                } else {
+                    clrLines();
+                    lineFive.setBackgroundColor(Color.WHITE);
+                    textCell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 26f);
+                    textCell.setText("LEV and NMC");
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_place, FragmentTemp.newInstance())
+                            .commitNow();
+                    fragNo = FRAG_TEMP;
+                }
+                break;
+            case 2:
+                if (fragNo == FRAG_CAP2) {
+                    updateFrag(FRAG_CAP2);
+                } else {
+                    prepCap2();
+                    clrLines();
+                    lineFive.setBackgroundColor(Color.WHITE);
+                    textCell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f);
+                    textCell.setText("Type: " + i_Chem);
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_place, FragmentCap2.newInstance())
+                            .commitNow();
+                    fragNo = FRAG_CAP2;
+                }
+>>>>>>> Stashed changes
                 break;
         }
     }
@@ -3632,6 +4295,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void StoreCalc(String datetime) {
+<<<<<<< Updated upstream
         ArrayList<String> strArray = new ArrayList<>();
         strArray.add(fileCalc.toString());
         strArray.add(datetime + ";B W;" + b_Watts.str() + "\r\n");
@@ -3723,6 +4387,149 @@ public class MainActivity extends AppCompatActivity {
         for (String aString : strArray) {
             str[i] = aString;
             i++;
+=======
+        if (fileCalc != null && fileCalc.exists()) {
+            ArrayList<String> strArray = new ArrayList<>();
+            strArray.add(fileCalc.toString());
+            strArray.add(datetime + ";B A;" + c_AmpsCal.str() + "\r\n");
+            strArray.add(datetime + ";B W;" + c_WattsCal.str() + "\r\n");
+            strArray.add(datetime + ";B WAvg;" + b_Wavg.str() + "\r\n");
+            strArray.add(datetime + ";M W;" + m_Watts.str() + "\r\n");
+            strArray.add(datetime + ";M WAvg;" + m_Wavg.str() + "\r\n");
+            strArray.add(datetime + ";T W;" + t_W.str() + "\r\n");
+            strArray.add(datetime + ";C CapAh;" + c_Ah.capStr() + "\r\n");
+            strArray.add(datetime + ";B CapAh;" + b_Ah.capStr() + "\r\n");
+            strArray.add(datetime + ";M CapAh;" + m_Ah.capStr() + "\r\n");
+            strArray.add(datetime + ";T CapAh;" + t_Ah.capStr() + "\r\n");
+            strArray.add(datetime + ";BMU CapAh;" + bmu_Ah.capStr() + "\r\n");
+            strArray.add(datetime + ";NMC CapAh;" + nmc_Ah.capStr() + "\r\n");
+            strArray.add(datetime + ";C Ah;" + c_Ah.remStr() + "\r\n");
+            strArray.add(datetime + ";B Ah;" + b_Ah.remStr() + "\r\n");
+            strArray.add(datetime + ";M Ah;" + m_Ah.remStr() + "\r\n");
+            strArray.add(datetime + ";T Ah;" + t_Ah.remStr() + "\r\n");
+            strArray.add(datetime + ";BMU Ah;" + bmu_Ah.remStr() + "\r\n");
+            strArray.add(datetime + ";NMC Ah;" + nmc_Ah.remStr() + "\r\n");
+            strArray.add(datetime + ";C Wh;" + c_Ah.remWhStr() + "\r\n");
+            strArray.add(datetime + ";B Wh;" + b_Ah.remWhStr() + "\r\n");
+            strArray.add(datetime + ";M Wh;" + m_Ah.remWhStr() + "\r\n");
+            strArray.add(datetime + ";T Wh;" + t_Ah.remWhStr() + "\r\n");
+            strArray.add(datetime + ";BMU Wh;" + bmu_Ah.remWhStr() + "\r\n");
+            strArray.add(datetime + ";NMC Wh;" + nmc_Ah.remWhStr() + "\r\n");
+            strArray.add(datetime + ";C Wh10;" + c_Ah.remWh10Str() + "\r\n");
+            strArray.add(datetime + ";B Wh10;" + b_Ah.remWh10Str() + "\r\n");
+            strArray.add(datetime + ";M Wh10;" + m_Ah.remWh10Str() + "\r\n");
+            strArray.add(datetime + ";T Wh10;" + t_Ah.remWh10Str() + "\r\n");
+            strArray.add(datetime + ";BMU Wh10;" + bmu_Ah.remWh10Str() + "\r\n");
+            strArray.add(datetime + ";NMC Wh10;" + nmc_Ah.remWh10Str() + "\r\n");
+            strArray.add(datetime + ";C CapWh;" + c_Ah.capWhStr() + "\r\n");
+            strArray.add(datetime + ";B CapWh;" + b_Ah.capWhStr() + "\r\n");
+            strArray.add(datetime + ";M CapWh;" + m_Ah.capStr() + "\r\n");
+            strArray.add(datetime + ";T CapWh;" + t_Ah.capStr() + "\r\n");
+            strArray.add(datetime + ";BMU CapWh;" + bmu_Ah.capWhStr() + "\r\n");
+            strArray.add(datetime + ";NMC CapWh;" + nmc_Ah.capWhStr() + "\r\n");
+            strArray.add(datetime + ";M SoCavg;" + m_SoCavg.str() + "\r\n");
+            strArray.add(datetime + ";C SoC;" + b_Ah.SoCStr() + "\r\n");
+            strArray.add(datetime + ";B SoC;" + b_Ah.SoCStr() + "\r\n");
+            strArray.add(datetime + ";M SoC;" + m_Ah.SoCStr() + "\r\n");
+            strArray.add(datetime + ";T SoC;" + t_Ah.SoCStr() + "\r\n");
+            strArray.add(datetime + ";BMU SoC;" + bmu_Ah.SoCStr() + "\r\n");
+            strArray.add(datetime + ";NMC SoC;" + nmc_Ah.SoCStr() + "\r\n");
+            strArray.add(datetime + ";C Wh/km;" + c_Ah.WhkmStr() + "\r\n");
+            strArray.add(datetime + ";C Wh/kmAux;" + c_Ah.WhkmStr() + "\r\n");
+            strArray.add(datetime + ";B Wh/km;" + b_Whkm.str() + "\r\n");
+            strArray.add(datetime + ";B Wh/kmAux;" + b_Ah.WhkmStr() + "\r\n");
+            strArray.add(datetime + ";M Wh/km;" + m_Whkm.str() + "\r\n");
+            strArray.add(datetime + ";M Wh/kmAux;" + m_Ah.WhkmStr() + "\r\n");
+            strArray.add(datetime + ";T Wh/km;" + t_Ah.WhkmStr() + "\r\n");
+            strArray.add(datetime + ";T Wh/kmAux;" + t_Ah.WhkmStr() + "\r\n");
+            strArray.add(datetime + ";BMU Wh/km;" + bmu_Ah.WhkmStr() + "\r\n");
+            strArray.add(datetime + ";BMU Wh/kmAux;" + bmu_Ah.WhkmStr() + "\r\n");
+            strArray.add(datetime + ";NMC Wh/kmAux;" + nmc_Ah.WhkmStr() + "\r\n");
+            strArray.add(datetime + ";C RR;" + c_Ah.RRStr() + "\r\n");
+            strArray.add(datetime + ";C RRtest;" + c_RRtest.str() + "\r\n");
+            strArray.add(datetime + ";B RR;" + b_Ah.RRStr() + "\r\n");
+            strArray.add(datetime + ";M RR;" + m_Ah.RRStr() + "\r\n");
+            strArray.add(datetime + ";T RR;" + t_Ah.RRStr() + "\r\n");
+            strArray.add(datetime + ";BMU RR;" + bmu_Ah.RRStr() + "\r\n");
+            strArray.add(datetime + ";NMC RR;" + nmc_Ah.RRStr() + "\r\n");
+            strArray.add(datetime + ";M Odometer;" + m_Odo.str() + "\r\n");
+            strArray.add(datetime + ";C kmTest;" + c_kmTest.str() + "\r\n");
+            strArray.add(datetime + ";M km;" + m_km.str() + "\r\n");
+            strArray.add(datetime + ";M kmTest;" + m_kmTest.str() + "\r\n");
+            strArray.add(datetime + ";T km;" + t_km.str() + "\r\n");
+            strArray.add(datetime + ";T reqR;" + t_reqkm.str() + "\r\n");
+            strArray.add(datetime + ";T Slope;" + t_Slope.str() + "\r\n");
+            strArray.add(datetime + ";M Wind;" + m_Wind.str() + "\r\n");
+            strArray.add(datetime + ";W Ah;" + w_Ah.remStr() + "\r\n");
+            strArray.add(datetime + ";W Wh;" + w_Ah.remWhStr() + "\r\n");
+            strArray.add(datetime + ";M Aux;" + m_AuxW.str() + "\r\n");
+            strArray.add(datetime + ";E N;" + e_N.str() + "\r\n");
+            strArray.add(datetime + ";E W;" + e_Watts.str() + "\r\n");
+            strArray.add(datetime + ";M ekg/s;" + m_Error.str() + "\r\n");
+            strArray.add(datetime + ";M eN;" + e_N.str() + "\r\n");
+            strArray.add(datetime + ";M eW;" + e_Watts.str() + "\r\n");
+            strArray.add(datetime + ";C Margin;" + i_Margin.str() + "\r\n");
+            strArray.add(datetime + ";T Margin;" + t_Margin.str() + "\r\n");
+            strArray.add(datetime + ";T RRChg;" + t_Margin.str() + "\r\n");
+            strArray.add(datetime + ";T Speed;" + t_Speed.str() + "\r\n");
+            strArray.add(datetime + ";Avg Speed;" + c_SpdShnAvg.str() + "\r\n");
+            strArray.add(datetime + ";C AvgSpeed;" + c_Speed0Avg.str() + "\r\n");
+            strArray.add(datetime + ";C AvgSpdRR;" + c_SpdAvgRR.str() + "\r\n");
+            strArray.add(datetime + ";B CapEst;" + b_CapEst.str() + "\r\n");
+            strArray.add(datetime + ";B AhDis;" + b_Ah.remStr() + "\r\n");
+            strArray.add(datetime + ";B AhChg;" + b_Ah.remStr() + "\r\n");
+            strArray.add(datetime + ";C SoCDis;" + b_SoC2.str() + "\r\n");
+            strArray.add(datetime + ";C SoCChg;" + b_SoC2.str() + "\r\n");
+            strArray.add(datetime + ";B CapDisAh;" + c_Ah.capStr() + "\r\n");
+            strArray.add(datetime + ";B CapChgAh;" + c_Ah.capStr() + "\r\n");
+            strArray.add(datetime + ";B CapAhChk;" + c_Ah.capStr() + "\r\n");
+            strArray.add(datetime + ";B AavgRR;0\r\n");
+            strArray.add(datetime + ";C Load;" + i_Load.str() + "\r\n");
+            strArray.add(datetime + ";C Roll;" + c_Roll.str() + "\r\n");
+            strArray.add(datetime + ";C Drag;" + c_Drag.str() + "\r\n");
+            strArray.add(datetime + ";C RegW;" + c_RegW.str() + "\r\n");
+            strArray.add(datetime + ";M Acc;" + m_AccW.str() + "\r\n");
+            strArray.add(datetime + ";M AccAvg;" + m_AccW.str() + "\r\n");
+            strArray.add(datetime + ";M SoC;" + m_SoCavg.str() + "\r\n");
+            strArray.add(datetime + ";M LowAmins;" + m_OCtimer.str() + "\r\n");
+            strArray.add(datetime + ";M CapTemp;" + m_CapTemp.str() + "\r\n");
+            strArray.add(datetime + ";M Cap1AhUsed;" + b_Ah.usedStr() + "\r\n");
+            strArray.add(datetime + ";M Cap1Ahmax;" + b_Cellmax.strAh1() + "\r\n");
+            strArray.add(datetime + ";M Cap1Ahavg;" + b_Cellavg.strAh1() + "\r\n");
+            strArray.add(datetime + ";M Cap1Ahmin;" + b_Cellmin.strAh1() + "\r\n");
+            strArray.add(datetime + ";M Cap2Ahsum;" + m_Ah.sumStr() + "\r\n");
+            strArray.add(datetime + ";M Cap2Ahmax;" + m_CAh2max.strAh2() + "\r\n");
+            strArray.add(datetime + ";M Cap2Ahavg;" + m_CAh2avg.strAh2() + "\r\n");
+            strArray.add(datetime + ";M Cap2Ahmin;" + m_CAh2min.strAh2() + "\r\n");
+            strArray.add("Stop");
+            String[] str = new String[strArray.size()];
+            int i = 0;
+            for (String aString : strArray) {
+                str[i] = aString;
+                i++;
+            }
+
+            new BackgroundTask(MainActivity.this) {
+                @Override
+                public void doInBackground() {
+                    try {
+                        File file = new File(str[0]);
+                        FileOutputStream f = new FileOutputStream(file, true);
+                        PrintWriter pw = new PrintWriter(f);
+                        for (int i = 1; i < str.length; i++) {
+                            if (str[i].equals("Stop")) break;
+                            if (str[i] != null) pw.print(str[i]);
+                        }
+                        pw.flush();
+                        pw.close();
+                        f.close();
+                    } catch (Exception e) {
+                        if (DEBUG) Log.e(TAG, "StoreCalc " + e);
+                        updateInfo("app:Error storing Calc data in background");
+                    }
+                }
+            }.execute();
+>>>>>>> Stashed changes
         }
 
         new BackgroundTask(MainActivity.this) {
