@@ -7,7 +7,7 @@ OBDZero can also measure the 100% capacity of the cars battery.
 
 The app saves data in semicolon separated text files, either in the phone’s storage or on an SD Card depending on how the phone is set up.
 
-OBDZero was developed on an older phone running Android 4.3 with an INTEY OBDII an inexpensive OBD Bluetooth dongle. 
+OBDZero should run on Android versions from 5 to 15. It runs well with many inexpensive OBD Bluetooth dongle however the cheapest dongles may be unusable. 
 
 The app does not exchange data with the Internet and it does not use GPS.
 
@@ -19,4 +19,9 @@ Acknowledgements and references:
 Much of the original code for OBDZero comes from Blueterm by pymasde.es.
 The commands to the Bluetooth dongle were found in ELM327DSH.pdf from www.elmelectronics.com
 The interpretations of the CAN PIDs for speed, voltage and current etc. were found on http://myimiev.com/forum/ posted by jjlink, garygid, priusfan, plaes, dax, cristi, and kiev.
+Extra PID interpretations were supplied by anko on https://www.myoutlanderphev.com/forum/viewtopic.php?f=10&t=1796. Data for the NMC93 batteries was supplied by piev on the myimiev forum.
+
+Thanks to all the users who have written to me for their support and suggestions.
+
 Special thanks to Anders Fanøe and Allan Korup for their advice on electric car and CAN technology.
+
