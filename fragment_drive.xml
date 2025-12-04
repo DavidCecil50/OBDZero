@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0.2533"
+        android:orientation="horizontal"
+        tools:ignore="Autofill,HardcodedText,LabelFor">
+
+        <EditText
+            android:id="@+id/text_distance"
+            android:layout_width="230dp"
+            android:layout_height="match_parent"
+            android:gravity="end|center"
+            android:inputType="phone"
+            android:padding="6dip"
+            android:text="0"
+            android:textSize="90sp"
+            android:imeOptions="actionDone" />
+
+        <TextView
+            android:id="@+id/distance_units"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:focusable="false"
+            android:gravity="start|center"
+            android:text="km"
+            android:textSize="26sp" />
+
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0.08"
+        android:focusable="false"
+        android:padding="5dp"
+        android:text="Distance to the next charging station"
+        android:textSize="14sp"
+        tools:ignore="Autofill,HardcodedText,LabelFor" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0.2533"
+        tools:ignore="Autofill,HardcodedText,LabelFor" >
+
+        <TextView
+            android:id="@+id/text_margin"
+            android:layout_width="230dp"
+            android:layout_height="match_parent"
+            android:focusable="false"
+            android:gravity="end|center"
+            android:padding="6dip"
+            android:text="20"
+            android:textColor="#ffffff"
+            android:textSize="90sp" />
+
+        <Button
+            android:id="@+id/km_units"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="start|center"
+            android:text="km"
+            android:textColor="#ffffff"
+            android:textSize="26sp" />
+
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0.08"
+        android:focusable="false"
+        android:padding="5dp"
+        android:text="Range minus the distance to the station"
+        android:textSize="14sp"
+        tools:ignore="Autofill,HardcodedText,LabelFor" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0.2533"
+        tools:ignore="Autofill,HardcodedText,LabelFor" >
+
+        <TextView
+            android:id="@+id/text_speed"
+            android:layout_width="230dp"
+            android:layout_height="match_parent"
+            android:focusable="false"
+            android:gravity="end|center"
+            android:padding="6dip"
+            android:text="90"
+            android:textColor="#ffffff"
+            android:textSize="90sp" />
+
+        <Button
+            android:id="@+id/speed_units"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="start|center"
+            android:text="km/h"
+            android:textColor="#ffffff"
+            android:textSize="26sp" />
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/title_speed"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0.08"
+        android:focusable="false"
+        android:text="Suggested speed to the station"
+        android:padding="5dp"
+        android:textSize="14sp"
+        tools:ignore="Autofill,HardcodedText,LabelFor" />
+
+</LinearLayout>
