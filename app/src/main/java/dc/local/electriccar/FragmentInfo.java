@@ -16,10 +16,10 @@ import java.util.ArrayList;
 
 
 public class FragmentInfo extends Fragment {
-    private static final String TAG = "FragmentInfo";
-    private static final boolean DEBUG = true;
+    private static final String TAG = "FragmentInfo:";
     private static Context appContext;
     private static final ListView[] list = new ListView[1];
+    private static ArrayList<String> arrayShowInfo = new ArrayList<>();
 
     static FragmentInfo newInstance() {
         return new FragmentInfo();
@@ -36,18 +36,24 @@ public class FragmentInfo extends Fragment {
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         appContext = getContext();
+        Refresh(MainActivity.listInfo);
     }
 
     static void Refresh(ArrayList<String> arrayInfo) {
+        arrayShowInfo.addAll(arrayInfo);
         try {
-            if (arrayInfo.size() > 0) {
+            if (!arrayShowInfo.isEmpty()) {
                 ArrayAdapter<String> listAdapter = new ArrayAdapter<>(appContext,
-                        R.layout.list_text_14left, arrayInfo);
+                        R.layout.list_text_14left, arrayShowInfo);
                 list[0].setAdapter(listAdapter);
                 list[0].setSelection(listAdapter.getCount() - 1);
             }
         } catch (Exception e) {
-            if (DEBUG) Log.i(TAG, " refreshing" + e);
+            Log.e(TAG, "refreshing" + e);
+        }
+        int i = arrayShowInfo.size();
+        if (i > 256) {
+            arrayShowInfo = new ArrayList<>(arrayShowInfo.subList(i - 256, i));
         }
     }
 }

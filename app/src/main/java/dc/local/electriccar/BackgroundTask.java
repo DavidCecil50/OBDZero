@@ -2,6 +2,7 @@ package dc.local.electriccar;
 
 import android.app.Activity;
 
+/** @noinspection unused*/
 public abstract class BackgroundTask {
 
     private final Activity activity;

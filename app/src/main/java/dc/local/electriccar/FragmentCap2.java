@@ -13,16 +13,19 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 
 
 public class FragmentCap2 extends Fragment {
-    private static final String TAG = "FragmentCap2";
-    private static final boolean DEBUG = true;
+    private static final String TAG = "FragmentCap2:";
     private static Context appContext;
     private static final TextView[] calcView = new TextView[25];
     private static final ListView[] instructions = new ListView[1];
     private static final String[] listInstructions = new String[9];
+
+    private final static DecimalFormat decFix0 = new DecimalFormat("##0");
 
     static FragmentCap2 newInstance() {
         return new FragmentCap2();
@@ -79,7 +82,7 @@ public class FragmentCap2 extends Fragment {
                 "before the measurement can begin.\n" +
                 "None of the steps in the procedure need to\n" +
                 "be done immediately after the previous step.\n");
-        listInstructions[1] = ("Try running the heater to reduce the SoC.\n");
+        listInstructions[1] = ("Running the heater will reduce the SoC.\n");
         listInstructions[2] = ("Now the SoC of all the cells is measured\n" +
                 "This requires 30 minutes at low\n" +
                 "load = amps less than 1.\n");
@@ -92,17 +95,25 @@ public class FragmentCap2 extends Fragment {
                 "The next steps can be done up to 2 hours\n" +
                 "after charging stops.");
         listInstructions[5] = ("");
-        listInstructions[6] = ("Now the SoC of all the cells are being measured\n" +
-                "again. As before this requires at least 30 minutes\n" +
+        listInstructions[6] = ("To complete the measurement unplug the car and\n" +
+                "turn it on to ready.\n");
+        listInstructions[7] = ("Now the SoC of all the cells are being measured\n" +
+                "again. This may require 30 minutes\n" +
                 "at low load = amps less than 1.\n");
-        listInstructions[7] = ("To complete the measurement unplug the car and\n" +
-                "turn it on to ready. Please wait some minutes\n" +
-                "while cell values are updated.\n");
 
         StepInstructions(0);
+
+        Refresh(MainActivity.arrayOBD, 0);
+    }
+    private static String computeMinutesWithHeater() {
+        if (MainActivity.b_SoC1.dbl > 14.5)
+            return decFix0.format(60 * MainActivity.c_Ah.cap * (MainActivity.c_Ah.SoC() - 14.5) / 1200 );
+        else return ("0");
     }
 
     private static void StepInstructions(final int instruction) {
+
+            listInstructions[1] = ("Run the heater for about " + computeMinutesWithHeater() + " min.\n");
 
         if (instruction == 8) {
             listInstructions[8] = ("The measurement is complete.\n" +
@@ -121,6 +132,7 @@ public class FragmentCap2 extends Fragment {
             ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(appContext,
                     R.layout.list_text_instructions, R.id.one_line, listInstructions) {
 
+                @NonNull
                 @Override
                 public View getView(int position, View convertView, @NonNull ViewGroup parent) {
                     // Get the Item from ListView
@@ -141,21 +153,22 @@ public class FragmentCap2 extends Fragment {
             };
 
             instructions[0].setAdapter(arrayAdapter);
-            instructions[0].setSelection(instruction);
+            instructions[0].setSelection(instruction - 1);
 
         } catch (Exception e) {
-            if (DEBUG) Log.i(TAG, " instructions" + e);
+            Log.e(TAG, "instructions" + e);
         }
     }
 
-    static void Refresh(ArrayList<String> arrayCalc, int step) {
+    static void Refresh(ArrayList<String> arrayCap2, int step) {
         int instruction;
-        if (step > 8) instruction = 8; else instruction = Math.max(step, 0);
-        int arrayLen = Math.min(calcView.length, arrayCalc.size());
+        if (step > 8) instruction = 8;
+        else instruction = Math.max(step, 0);
+        int arrayLen = Math.min(calcView.length, arrayCap2.size());
         try {
-            for (int i = 0; i < arrayLen; i++) calcView[i].setText(arrayCalc.get(i));
+            for (int i = 0; i < arrayLen; i++) calcView[i].setText(arrayCap2.get(i));
         } catch (Exception e) {
-            if (DEBUG) Log.i(TAG, " refreshing" + e);
+            Log.e(TAG, "refreshing" + e);
         }
         StepInstructions(instruction);
     }
