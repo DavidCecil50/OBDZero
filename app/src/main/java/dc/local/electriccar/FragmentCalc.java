@@ -1,5 +1,7 @@
 package dc.local.electriccar;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import android.os.Bundle;
@@ -12,8 +14,7 @@ import android.widget.TextView;
 import java.util.ArrayList;
 
 public class FragmentCalc extends Fragment {
-    private static final String TAG = "FragmentCalc";
-    private static final boolean DEBUG = true;
+    private static final String TAG = "FragmentCalc:";
     private static final TextView[] calcView = new TextView[40];
 
     static FragmentCalc newInstance() {
@@ -75,11 +76,17 @@ public class FragmentCalc extends Fragment {
         return view;
     }
 
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        Refresh(MainActivity.arrayOBD);
+    }
+
     static void Refresh(ArrayList<String> arrayCalc) {
         try {
             for (int i = 0; i < 37; i++) calcView[i].setText(arrayCalc.get(i));
         } catch (Exception e) {
-            if (DEBUG) Log.i(TAG, " refreshing" + e);
+            Log.e(TAG, "refreshing" + e);
         }
     }
 }

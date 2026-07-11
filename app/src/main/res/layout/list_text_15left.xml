@@ -4,4 +4,5 @@
     android:layout_height="wrap_content"
     android:gravity="start"
     android:textColor="#ffffff"
+    android:fontFamily="monospace"
     android:textSize="15sp" />

@@ -16,12 +16,11 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 
-
 public class FragmentOBD extends Fragment {
-    private static final String TAG = "FragmentOBD";
-    private static final boolean DEBUG = true;
+    private static final String TAG = "FragmentOBD:";
     private static Context appContext;
     private static final ListView[] list = new ListView[1];
+
 
     static FragmentOBD newInstance() {
         return new FragmentOBD();
@@ -38,47 +37,25 @@ public class FragmentOBD extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         appContext = getContext();
-    }
+        Refresh(MainActivity.arrayOBD);
 
-<<<<<<< Updated upstream
-    static void Refresh(ArrayList<String> arrayOBD) {
-        int position = list[0].getFirstVisiblePosition();
-        arrayOBD.add("");
-        if (arrayOBD.size() > 0) {
-            try {
-                ArrayAdapter<String> listAdapter = new ArrayAdapter<>(appContext,
-                        R.layout.list_text_14left, arrayOBD);
-                list[0].setAdapter(listAdapter);
-                list[0].setSelection(position);
-            } catch (Exception e) {
-                if (DEBUG) Log.i(TAG, " refreshing" + e);
-            }
-        }
-
-        if (MainActivity.checkOdoUnits) {
-            CharSequence text = "Check the if the Odometer shown above is in miles and not km. " +
-=======
         if (MainActivity.checkOdoMiles) {
             CharSequence text = "Check if the Odometer shown above is in miles and not km. " +
->>>>>>> Stashed changes
                     "If so change the odometer units to miles in the initials values menu";
             int duration = Toast.LENGTH_LONG;
             Toast toast = Toast.makeText(appContext.getApplicationContext(), text, duration);
             toast.show();
         }
 
-        if (MainActivity.checkRangeUnits) {
-            CharSequence text = "Check the if the range shown above is in miles and not km. " +
+        if (MainActivity.checkRRMiles) {
+            CharSequence text = "Check if the range shown above is in miles and not km. " +
                     "If so change the range units to miles in the initials values menu";
             int duration = Toast.LENGTH_LONG;
             Toast toast = Toast.makeText(appContext.getApplicationContext(), text, duration);
             toast.show();
-<<<<<<< Updated upstream
-=======
             }
 
         }
-
 
     static void Refresh(ArrayList<String> arrayOBD) {
        int position = list[0].getFirstVisiblePosition();
@@ -90,8 +67,6 @@ public class FragmentOBD extends Fragment {
             list[0].setSelection(position);
         } catch (Exception e) {
             Log.e(TAG, "refreshing" + e);
->>>>>>> Stashed changes
         }
-
     }
 }

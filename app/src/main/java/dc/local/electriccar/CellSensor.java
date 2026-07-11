@@ -3,6 +3,7 @@ package dc.local.electriccar;
 
 import java.text.DecimalFormat;
 
+/** @noinspection unused*/
 class CellSensor {
     private final static DecimalFormat decFix0 = new DecimalFormat("##0");
 

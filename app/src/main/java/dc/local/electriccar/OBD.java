@@ -43,8 +43,8 @@ class OBD {
         }
     }
 
-    String strUnit() {
-        if (unit.length() > 0) {
+    String unit() {
+        if (!unit.isEmpty()) {
             if (unit.equals("oC")) {
                 return str() + unit;
             } else {
